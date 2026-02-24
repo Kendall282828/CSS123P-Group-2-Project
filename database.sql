@@ -8,7 +8,7 @@ USE car_rental_agency;
 -- CREATE TABLES
 -- =====================================================
 
--- 1. User table
+-- 1. User table (base table for inheritance)
 CREATE TABLE User (
     login_id VARCHAR(50) PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,
@@ -17,7 +17,7 @@ CREATE TABLE User (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 2. Admin table
+-- 2. Admin table (inherits from User)
 CREATE TABLE Admin (
     admin_id VARCHAR(50) PRIMARY KEY,
     login_id VARCHAR(50) NOT NULL UNIQUE,
@@ -25,7 +25,7 @@ CREATE TABLE Admin (
     FOREIGN KEY (login_id) REFERENCES User(login_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 3. Customer table
+-- 3. Customer table (inherits from User)
 CREATE TABLE Customer (
     customer_id VARCHAR(50) PRIMARY KEY,
     login_id VARCHAR(50) NOT NULL UNIQUE,
@@ -33,9 +33,9 @@ CREATE TABLE Customer (
     FOREIGN KEY (login_id) REFERENCES User(login_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 4. Car table
+-- 4. Car table - with INT car_id and NO status field
 CREATE TABLE Car (
-    car_id VARCHAR(50) PRIMARY KEY,
+    car_id INT PRIMARY KEY AUTO_INCREMENT,
     make VARCHAR(50) NOT NULL,
     model VARCHAR(50) NOT NULL,
     year INT NOT NULL,
@@ -45,11 +45,11 @@ CREATE TABLE Car (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 5. Rental Request table
+-- 5. Rental Request table - status is ONLY here
 CREATE TABLE RentalRequest (
     request_id VARCHAR(50) PRIMARY KEY,
     customer_id VARCHAR(50) NOT NULL,
-    car_id VARCHAR(50) NOT NULL,
+    car_id INT NOT NULL,  -- Changed to INT to match Car.car_id
     status ENUM('Pending', 'Approved', 'Rejected', 'Completed') DEFAULT 'Pending',
     request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     start_date DATE,
@@ -59,29 +59,29 @@ CREATE TABLE RentalRequest (
     FOREIGN KEY (car_id) REFERENCES Car(car_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Indexes
+-- Create indexes for better performance
 CREATE INDEX idx_rental_customer ON RentalRequest(customer_id);
 CREATE INDEX idx_rental_car ON RentalRequest(car_id);
 CREATE INDEX idx_rental_status ON RentalRequest(status);
 CREATE INDEX idx_car_availability ON Car(is_available);
 
--- 6. CarRentalAgency table
+-- 6. CarRentalAgency table (system configuration)
 CREATE TABLE CarRentalAgency (
     agency_id INT PRIMARY KEY AUTO_INCREMENT,
     agency_name VARCHAR(100) DEFAULT 'CarRentalAgency',
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 7. AgencyCars junction table
+-- 7. Junction table for agency-cars relationship
 CREATE TABLE AgencyCars (
     agency_id INT,
-    car_id VARCHAR(50),
+    car_id INT,  -- Changed to INT to match Car.car_id
     PRIMARY KEY (agency_id, car_id),
     FOREIGN KEY (agency_id) REFERENCES CarRentalAgency(agency_id) ON DELETE CASCADE,
     FOREIGN KEY (car_id) REFERENCES Car(car_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 8. AgencyPendingRequests junction table
+-- 8. Junction table for pending requests in agency
 CREATE TABLE AgencyPendingRequests (
     agency_id INT,
     request_id VARCHAR(50),
@@ -111,34 +111,35 @@ INSERT INTO Admin (admin_id, login_id, name) VALUES
 ('ADM001', 'U003', 'Sarah Johnson'),
 ('ADM002', 'U004', 'Mike Wilson');
 
--- Insert Cars
-INSERT INTO Car (car_id, make, model, year, rate, is_available) VALUES
-('CAR001', 'Toyota', 'Camry', 2022, 45.00, 'Yes'),
-('CAR002', 'Honda', 'Civic', 2023, 40.00, 'No'),
-('CAR003', 'Ford', 'Raptor', 2024, 50.00, 'Yes'),
-('CAR004', 'Tesla', 'Model 3', 2023, 75.00, 'Yes'),
-('CAR005', 'Chevrolet', 'Malibu', 2022, 42.00, 'No'),
-('CAR006', 'BMW', 'X5', 2024, 95.00, 'Yes'),
-('CAR007', 'Mercedes', 'C300', 2023, 85.00, 'No');
+-- Insert Cars with INT IDs (AUTO_INCREMENT will generate IDs automatically)
+INSERT INTO Car (make, model, year, rate, is_available) VALUES
+('Toyota', 'Camry', 2022, 45.00, 'Yes'),
+('Honda', 'Civic', 2023, 40.00, 'No'),
+('Ford', 'Raptor', 2024, 50.00, 'Yes'),
+('Tesla', 'Model 3', 2023, 75.00, 'Yes'),
+('Chevrolet', 'Malibu', 2022, 42.00, 'No'),
+('BMW', 'X5', 2024, 95.00, 'Yes'),
+('Mercedes', 'C300', 2023, 85.00, 'No');
+
 
 -- Insert Car Rental Agencies
 INSERT INTO CarRentalAgency (agency_name) VALUES 
 ('Main Rental Agency'),
 ('Downtown Branch');
 
--- Link cars to agencies
+-- Link cars to agencies (using the auto-generated IDs)
+-- Assuming cars got IDs 1-7 in the order inserted above
 INSERT INTO AgencyCars (agency_id, car_id) VALUES
-(1, 'CAR001'), (1, 'CAR002'), (1, 'CAR003'), (1, 'CAR004'),
-(1, 'CAR005'), (1, 'CAR006'), (1, 'CAR007'),
-(2, 'CAR001'), (2, 'CAR003'), (2, 'CAR004'), (2, 'CAR006');
+(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7),
+(2, 1), (2, 3), (2, 4), (2, 6);
 
--- Insert Rental Requests
+-- Insert Rental Requests - status is ONLY here
 INSERT INTO RentalRequest (request_id, customer_id, car_id, status, start_date, end_date, total_cost) VALUES
-('REQ001', 'CUST001', 'CAR003', 'Pending', '2024-03-01', '2024-03-05', 200.00),
-('REQ002', 'CUST002', 'CAR002', 'Approved', '2024-02-15', '2024-02-20', 200.00),
-('REQ003', 'CUST001', 'CAR005', 'Completed', '2024-02-01', '2024-02-05', 168.00),
-('REQ004', 'CUST002', 'CAR007', 'Approved', '2024-02-20', '2024-02-25', 425.00),
-('REQ005', 'CUST001', 'CAR001', 'Pending', '2024-03-10', '2024-03-15', 225.00);
+('REQ001', 'CUST001', 3, 'Pending', '2024-03-01', '2024-03-05', 200.00),
+('REQ002', 'CUST002', 2, 'Approved', '2024-02-15', '2024-02-20', 200.00),
+('REQ003', 'CUST001', 5, 'Completed', '2024-02-01', '2024-02-05', 168.00),
+('REQ004', 'CUST002', 7, 'Approved', '2024-02-20', '2024-02-25', 425.00),
+('REQ005', 'CUST001', 1, 'Pending', '2024-03-10', '2024-03-15', 225.00);
 
 -- Link pending requests to agencies
 INSERT INTO AgencyPendingRequests (agency_id, request_id) VALUES
@@ -148,34 +149,71 @@ INSERT INTO AgencyPendingRequests (agency_id, request_id) VALUES
 -- CREATE VIEWS
 -- =====================================================
 
+-- View for customers with login info
 CREATE VIEW CustomerView AS
-SELECT c.customer_id, c.name, u.username, u.created_at as account_created
-FROM Customer c JOIN User u ON c.login_id = u.login_id;
+SELECT 
+    c.customer_id,
+    c.name,
+    u.username,
+    u.created_at as account_created
+FROM Customer c
+JOIN User u ON c.login_id = u.login_id;
 
+-- View for admins with login info
 CREATE VIEW AdminView AS
-SELECT a.admin_id, a.name, u.username, u.created_at as account_created
-FROM Admin a JOIN User u ON a.login_id = u.login_id;
+SELECT 
+    a.admin_id,
+    a.name,
+    u.username,
+    u.created_at as account_created
+FROM Admin a
+JOIN User u ON a.login_id = u.login_id;
 
+-- View for rental requests with details
 CREATE VIEW RentalRequestDetails AS
-SELECT rr.request_id, rr.status, rr.request_date,
+SELECT 
+    rr.request_id,
+    rr.status,  -- Status is from RentalRequest table
+    rr.request_date,
     DATE_FORMAT(rr.start_date, '%Y-%m-%d') as start_date,
     DATE_FORMAT(rr.end_date, '%Y-%m-%d') as end_date,
-    rr.total_cost, c.customer_id, c.name as customer_name,
-    car.car_id, car.make, car.model, car.year, car.rate, car.is_available as car_availability
+    rr.total_cost,
+    c.customer_id,
+    c.name as customer_name,
+    car.car_id,
+    car.make,
+    car.model,
+    car.year,
+    car.rate,
+    car.is_available as car_availability
 FROM RentalRequest rr
 JOIN Customer c ON rr.customer_id = c.customer_id
 JOIN Car car ON rr.car_id = car.car_id;
 
+-- View for car inventory with agency info
 CREATE VIEW CarInventoryView AS
-SELECT c.car_id, c.make, c.model, c.year, c.rate, c.is_available,
-    ac.agency_id, cra.agency_name,
-    CASE WHEN c.is_available = 'Yes' THEN 'Available for Rent' ELSE 'Currently Rented' END as status_description
+SELECT 
+    c.car_id,
+    c.make,
+    c.model,
+    c.year,
+    c.rate,
+    c.is_available,
+    ac.agency_id,
+    cra.agency_name,
+    CASE 
+        WHEN c.is_available = 'Yes' THEN 'Available for Rent'
+        ELSE 'Currently Rented'
+    END as status_description
 FROM Car c
 JOIN AgencyCars ac ON c.car_id = ac.car_id
 JOIN CarRentalAgency cra ON ac.agency_id = cra.agency_id;
 
+-- View for agency dashboard
 CREATE VIEW AgencyDashboard AS
-SELECT cra.agency_id, cra.agency_name,
+SELECT 
+    cra.agency_id,
+    cra.agency_name,
     COUNT(DISTINCT ac.car_id) as total_cars,
     SUM(CASE WHEN c.is_available = 'Yes' THEN 1 ELSE 0 END) as available_cars,
     SUM(CASE WHEN c.is_available = 'No' THEN 1 ELSE 0 END) as rented_cars,
@@ -193,6 +231,7 @@ GROUP BY cra.agency_id, cra.agency_name;
 
 DELIMITER $$
 
+-- Trigger to automatically update car availability when request is approved
 CREATE TRIGGER update_car_on_approval
 AFTER UPDATE ON RentalRequest
 FOR EACH ROW
@@ -202,6 +241,7 @@ BEGIN
     END IF;
 END$$
 
+-- Trigger to update car availability when rental is completed
 CREATE TRIGGER update_car_on_completion
 AFTER UPDATE ON RentalRequest
 FOR EACH ROW
@@ -211,6 +251,7 @@ BEGIN
     END IF;
 END$$
 
+-- Trigger to calculate total cost when dates are set
 CREATE TRIGGER calculate_total_cost
 BEFORE UPDATE ON RentalRequest
 FOR EACH ROW
@@ -229,8 +270,9 @@ DELIMITER ;
 
 DELIMITER $$
 
+-- Procedure to rent a car
 CREATE PROCEDURE RentCar(
-    IN p_car_id VARCHAR(50),
+    IN p_car_id INT,  -- Changed to INT
     IN p_customer_id VARCHAR(50),
     IN p_request_id VARCHAR(50),
     IN p_start_date DATE,
@@ -255,8 +297,9 @@ BEGIN
     END IF;
 END$$
 
+-- Procedure to return a car
 CREATE PROCEDURE ReturnCar(
-    IN p_car_id VARCHAR(50),
+    IN p_car_id INT,  -- Changed to INT
     IN p_request_id VARCHAR(50)
 )
 BEGIN
