@@ -32,14 +32,11 @@ public class login extends JFrame{
 		});
 	}
 	
-	public static void dbConnect() {
-		try {
-			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/car_rental_system","root","root");
-			stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
-		}
-		catch(Exception e) {
-			e.printStackTrace();  
-		}
+	public static Connection dbConnect() throws SQLException {
+	    String url = "jdbc:mysql://localhost:3306/car_rental_agency";  //fix this later (fixed (?))
+	    String user = "root";
+	    String pass = "root";
+	    return DriverManager.getConnection(url, user, pass);
 	}
 
 
@@ -109,4 +106,5 @@ public class login extends JFrame{
 			}
 			});
 	}
+
 }
