@@ -18,6 +18,13 @@ public class login extends JFrame{
 	static ResultSet rs;
 	static String query;
 	
+	String[][] mockUsers = {
+		    {"admin", "admin123", "Admin"},
+		    {"customer", "password123", "Customer"}
+		    
+		    //MOCK USER DB for if mySQL fails (format {username, password, user type})
+		};
+	
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -32,17 +39,19 @@ public class login extends JFrame{
 		});
 	}
 	
-	public static Connection dbConnect() throws SQLException {
-	    String url = "jdbc:mysql://localhost:3306/car_rental_agency";  //fix this later (fixed (?))
-	    String user = "root";
-	    String pass = "root";
-	    return DriverManager.getConnection(url, user, pass);
+	public static void dbConnect() {
+		try {
+			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/car_rental_system","root","root");
+			stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
+		}
+		catch(Exception e) {
+			e.printStackTrace();  
+		}
 	}
-
 
 	public login() {
 	    initialize();
-	    dbConnect();
+	    //dbConnect() || removing this for now bc SQL cannot be tested;
 
         }
         
@@ -87,24 +96,68 @@ public class login extends JFrame{
 		btnSubmit.setBounds(73,169,105,41);
 		getContentPane().add(btnSubmit);
 		btnSubmit.addActionListener(new ActionListener() {
-			@SuppressWarnings("deprecation")
-			public void actionPerformed(ActionEvent e) {
-				try {
-					query = "select * from LOGIN where password ='" + txtPassword.getText() + "'" + " AND username='" + txtUsername.getText() +"'";
-					rs = stmt.executeQuery(query);
-					if (rs.next()) {
-                                            JOptionPane.showMessageDialog(null, "Login Complete");
-                                            new Exer5_GUI_CRUD();
-                                            dispose();
-                                        } 
-					else {
-						JOptionPane.showMessageDialog(null, "Username and/or password does not match...");
-					}
-                                    } catch (SQLException e1) {
-                                        e1.printStackTrace();
-                                    }
-			}
-			});
+		    @SuppressWarnings("deprecation")
+		    public void actionPerformed(ActionEvent e) {
+
+		    	String username = txtUsername.getText().trim();
+		    	String password = txtPassword.getText().trim();
+
+		        try {
+		            // ==============================
+		            // DATABASE LOGIN ATTEMPT
+		            // ==============================
+		            query = "SELECT user_type FROM User WHERE username='"
+		                    + username + "' AND password='" + password + "'";
+
+		            rs = stmt.executeQuery(query);
+
+		            if (rs.next()) {
+		                String role = rs.getString("user_type");
+
+		                JOptionPane.showMessageDialog(
+		                        null, "Login Complete (" + role + ")");
+
+		                new Exer5_GUI_CRUD();
+		                dispose();
+		                return;
+		            }
+
+		            JOptionPane.showMessageDialog(
+		                    null, "Username and/or password does not match");
+
+		        } catch (Exception ex) {
+
+		            // ==============================
+		            // FALLBACK LOGIN (MOCK MODE)
+		            // ==============================
+		            boolean matched = false;
+
+		            for (String[] user : mockUsers) {
+		                if (user[0].equals(username)
+		                        && user[1].equals(password)) {
+
+		                    matched = true;
+		                    String role = user[2];
+
+		                    JOptionPane.showMessageDialog(
+		                            null,
+		                            "Login Complete (" + role + ")\n[Mock Mode]");
+
+		                    new Exer5_GUI_CRUD();
+		                    dispose();
+		                    break;
+		                }
+		            }
+
+		            if (!matched) {
+		                JOptionPane.showMessageDialog(
+		                        null,
+		                        "Invalid login [Mock Mode]");
+		            }
+		        }
+		    }
+		});
+
 	}
 
 }

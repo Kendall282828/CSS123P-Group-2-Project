@@ -1,9 +1,9 @@
 package pckExer;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import javax.swing.*;
 
 class Car {
     int id;
@@ -179,9 +179,5 @@ public class Exer5_GUI_CRUD extends JFrame implements ActionListener {
             sb.append(c).append("\n");
         }
         return sb.toString();
-    }
-
-    public static void main(String[] args) {
-        new Exer5_GUI_CRUD();
     }
 }
