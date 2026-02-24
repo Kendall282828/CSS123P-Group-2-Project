@@ -1,4 +1,4 @@
-package Exer6;
+package pckExer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -32,25 +32,23 @@ public class login extends JFrame{
 		});
 	}
 	
-	public static Connection dbConnect() throws SQLException {
-	    String url = "jdbc:mysql://localhost:3306/car_rental_system";  //fix this later
-	    String user = "root";
-	    String pass = "root";
-	    return DriverManager.getConnection(url, user, pass);
+	public static void dbConnect() {
+		try {
+			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/car_rental_system","root","root");
+			stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
+		}
+		catch(Exception e) {
+			e.printStackTrace();  
+		}
 	}
 
 
 	public login() {
 	    initialize();
-	    try {
-	        conn = dbConnect(); // assign the connection
-	        stmt = conn.createStatement();
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-	}
+	    dbConnect();
 
-	
+        }
+        
 	private void initialize() {
 		setBounds(100,100,389,290);
 		setTitle("Login");
@@ -95,18 +93,19 @@ public class login extends JFrame{
 			@SuppressWarnings("deprecation")
 			public void actionPerformed(ActionEvent e) {
 				try {
-					query = "select * from LOGIN where password ='" + txtPassword.getText() + "'" + "and username='" + txtUsername.getText() +"'";
+					query = "select * from LOGIN where password ='" + txtPassword.getText() + "'" + " AND username='" + txtUsername.getText() +"'";
 					rs = stmt.executeQuery(query);
-					if(rs.next()) {
-						JOptionPane.showMessageDialog(null, "Login Complete");
-						
-					}
+					if (rs.next()) {
+                                            JOptionPane.showMessageDialog(null, "Login Complete");
+                                            new Exer5_GUI_CRUD();
+                                            dispose();
+                                        } 
 					else {
-						JOptionPane.showConfirmDialog(null, "username and/or password does not match...");
+						JOptionPane.showMessageDialog(null, "Username and/or password does not match...");
 					}
-					} catch (SQLException e1) {
-						e1.printStackTrace();
-					}
+                                    } catch (SQLException e1) {
+                                        e1.printStackTrace();
+                                    }
 			}
 			});
 	}
