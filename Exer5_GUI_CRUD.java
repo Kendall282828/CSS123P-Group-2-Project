@@ -1,5 +1,8 @@
 package pckExer;
 
+import java.awt.EventQueue;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import javax.swing.*;
 import javax.swing.event.*;    
 import java.awt.event.*;
@@ -8,6 +11,7 @@ import java.sql.DriverManager;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class Exer5_GUI_CRUD extends JFrame implements ActionListener {
 
@@ -25,7 +29,7 @@ public class Exer5_GUI_CRUD extends JFrame implements ActionListener {
 	
 	public static void dbConnect() {
 		try {
-			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/Practice Exercise1","root","root");
+			conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/car_rental_system","root","root");
 			stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_READ_ONLY);
 		}
 		catch(Exception e) {
@@ -83,10 +87,31 @@ public class Exer5_GUI_CRUD extends JFrame implements ActionListener {
 			userItem = JOptionPane.showInputDialog("Please enter item to create");
 		}
 		else if (source == R) {
-			userItem = JOptionPane.showInputDialog("Please enter item to read");
-			if(userItem == "") {
-				
+			userItem = JOptionPane.showInputDialog("Please enter item to read (leave blank to show all)");
+			
+			try {
+				dbConnect();
+				if(userItem == null || userItem.trim().equals("")) {
+					query = "SELECT * FROM car";
+					
+					rs = stmt.executeQuery(query);
+					
+					String output = "";
+					
+					while(rs.next()) {
+						output += rs.getString(1) + "\t" + rs.getString(2) + "\t" + rs.getString(3) + "\n";
+					}
+					
+					textArea.setText(output);
+				}
+				else {
+					
+				}
+			} catch(Exception ex) {
+				textArea.setText("Error: "+ex);
 			}
+			
+			
 		}
 		else if (source == U) {
 			userItem = JOptionPane.showInputDialog("Please enter item to update");
