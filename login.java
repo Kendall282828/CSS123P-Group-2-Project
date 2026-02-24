@@ -32,27 +32,24 @@ public class login extends JFrame{
 		});
 	}
 	
-	public static void dbConnect() {
-		try {
-			conn = DriverManager.getConnection(query); //fix later
-			stmt = conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_READ_ONLY);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	public static Connection dbConnect() throws SQLException {
+	    String url = "jdbc:mysql://localhost:3306/car_rental_system";  //fix this later
+	    String user = "root";
+	    String pass = "root";
+	    return DriverManager.getConnection(url, user, pass);
 	}
+
+
 	public login() {
-		initialize();
-		/*dbConnect();
-		try {
-			query = "select * from tbluser";
-			rs = stmt.executeQuery(query);
-			rs.first();
-			
-			//conn.close();
-		} catch (SQLException e1) {
-			e1.printStackTrace();
-		}*/
+	    initialize();
+	    try {
+	        conn = dbConnect(); // assign the connection
+	        stmt = conn.createStatement();
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
 	}
+
 	
 	private void initialize() {
 		setBounds(100,100,389,290);
@@ -95,9 +92,22 @@ public class login extends JFrame{
 		btnSubmit.setBounds(73,169,105,41);
 		getContentPane().add(btnSubmit);
 		btnSubmit.addActionListener(new ActionListener() {
+			@SuppressWarnings("deprecation")
 			public void actionPerformed(ActionEvent e) {
-				/* add SQL CODE HERE */
+				try {
+					query = "select * from LOGIN where password ='" + txtPassword.getText() + "'" + "and username='" + txtUsername.getText() +"'";
+					rs = stmt.executeQuery(query);
+					if(rs.next()) {
+						JOptionPane.showMessageDialog(null, "Login Complete");
+						
+					}
+					else {
+						JOptionPane.showConfirmDialog(null, "username and/or password does not match...");
+					}
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
 			}
-		});
+			});
 	}
 }
