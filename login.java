@@ -33,7 +33,7 @@ public class login extends JFrame{
 	}
 	
 	public static Connection dbConnect() throws SQLException {
-	    String url = "jdbc:mysql://localhost:3306/car_rental_system";  //fix this later
+	    String url = "jdbc:mysql://localhost:3306/car_rental_agency";  //fix this later (fixed (?))
 	    String user = "root";
 	    String pass = "root";
 	    return DriverManager.getConnection(url, user, pass);
@@ -110,4 +110,5 @@ public class login extends JFrame{
 			}
 			});
 	}
+
 }
