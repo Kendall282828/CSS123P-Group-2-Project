@@ -33,40 +33,56 @@ class Car {
     }
 }
 
-public class Exer5_GUI_CRUD extends JFrame implements ActionListener {
+public class GUI extends JFrame implements ActionListener {
     // GUI components
     JButton C = new JButton("Create");
     JButton R = new JButton("Read");
     JButton U = new JButton("Update");
     JButton D = new JButton("Delete");
+    JButton Rent = new JButton("Rent");
     JTextArea textArea;
     
     Connection conn;
 
-    public Exer5_GUI_CRUD() {
+    public GUI(String role) {
         // Setup frame
         setTitle("Car Rental Database CRUD GUI");
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // Add listeners
-        C.addActionListener(this);
-        R.addActionListener(this);
-        U.addActionListener(this);
-        D.addActionListener(this);
-
-        // Top panel with buttons
-        JPanel left = new JPanel();
-        left.add(C);
-        JPanel right = new JPanel();
-        right.add(R);
-        right.add(U);
-        right.add(D);
         JPanel top = new JPanel(new BorderLayout());
+        JPanel left = new JPanel();
+        JPanel right = new JPanel();
+        
+      
+        if(role=="Admin") {
+        	// Add listeners
+            C.addActionListener(this);
+            R.addActionListener(this);
+            U.addActionListener(this);
+            D.addActionListener(this);
+
+            // Buttons
+            left.add(C);
+            right.add(R);
+            right.add(U);
+            right.add(D);
+        } 
+        else if (role=="Customer") {
+        	// Add listeners
+        	Rent.addActionListener(this);
+        	R.addActionListener(this);
+        	
+        	// Buttons
+        	left.add(Rent);
+            right.add(R);
+        }
+        
+        // Top panel
         top.add(left, BorderLayout.WEST);
         top.add(right, BorderLayout.EAST);
-
+        
         // Text area
         textArea = new JTextArea("Database output will appear here.", 15, 50);
         textArea.setEditable(false);
@@ -75,7 +91,7 @@ public class Exer5_GUI_CRUD extends JFrame implements ActionListener {
         // Add panels to frame
         add(top, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
-
+        
         connectDatabase();
         
         setVisible(true);
@@ -230,11 +246,21 @@ public class Exer5_GUI_CRUD extends JFrame implements ActionListener {
             } catch (Exception ex) {
                 textArea.setText("Error deleting car.");
             }
+        } else if (source == Rent) {
+        	try {
+                int id = Integer.parseInt(
+                        JOptionPane.showInputDialog("Enter Car ID to rent:")
+                );
+
+            } catch (Exception ex) {
+                textArea.setText("Error renting car.");
+            }
         }
     }
     
-    //temp
+    // Parameter is bugged with login/database at the moment
+    // Also customer Gui is unfinished
     public static void main(String[] args) {
-        new Exer5_GUI_CRUD();
+        new GUI("Customer");
     }
 }
