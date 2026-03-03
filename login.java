@@ -15,8 +15,6 @@ public class login extends JFrame {
     private JPasswordField txtPassword;
     static Connection conn;
 
-    
-
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
             try {
@@ -83,41 +81,38 @@ public class login extends JFrame {
         btnSubmit.setBounds(73, 169, 105, 41);
         getContentPane().add(btnSubmit);
         btnSubmit.addActionListener(e -> handleLogin());
+
+        txtUsername.addActionListener(e -> handleLogin());
+        txtPassword.addActionListener(e -> handleLogin());
     }
 
     private void handleLogin() {
         String username = txtUsername.getText().trim();
-        String password = new String(txtPassword.getPassword()).trim(); // fixed: no deprecation
+        String password = new String(txtPassword.getPassword()).trim();
 
-        // ==============================
-        // DATABASE LOGIN ATTEMPT
-        // ==============================
-        if (conn != null) {
-            try {
-                // fixed: use PreparedStatement to prevent SQL injection
-                String sql = "SELECT user_type FROM User WHERE username=? AND password=?";
-                PreparedStatement pst = conn.prepareStatement(sql);
-                pst.setString(1, username);
-                pst.setString(2, password);
-                ResultSet rs = pst.executeQuery();
-
-                if (rs.next()) {
-                    String role = rs.getString("user_type");
-                    JOptionPane.showMessageDialog(null, "Login Complete (" + role + ")");
-                    new Exer5_GUI_CRUD();
-                    dispose();
-                    return;
-                }
-
-                JOptionPane.showMessageDialog(null, "Username and/or password does not match.");
-                return;
-
-            } catch (Exception ex) {
-                System.err.println("DB query error: " + ex.getMessage());
-                // fall through to mock mode
-            }
+        if (conn == null) {
+            JOptionPane.showMessageDialog(null, "No database connection.");
+            return;
         }
 
-        
+        try {
+            String sql = "SELECT user_type FROM User WHERE username=? AND password=?";
+            PreparedStatement pst = conn.prepareStatement(sql);
+            pst.setString(1, username);
+            pst.setString(2, password);
+            ResultSet rs = pst.executeQuery();
+
+            if (rs.next()) {
+                String role = rs.getString("user_type");
+                JOptionPane.showMessageDialog(null, "Login Complete (" + role + ")");
+                new Exer5_GUI_CRUD();
+                dispose();
+            } else {
+                JOptionPane.showMessageDialog(null, "Username and/or password does not match.");
+            }
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(null, "Login error: " + ex.getMessage());
+        }
     }
 }
