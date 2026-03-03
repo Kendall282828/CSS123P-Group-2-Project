@@ -3,6 +3,7 @@ package pckExer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 
 import javax.swing.*;
 import java.sql.Connection;
@@ -77,14 +78,19 @@ public class login extends JFrame {
             txtPassword.setText("");
         });
 
-        JButton btnSubmit = new JButton("LOGIN");
-        btnSubmit.setBounds(73, 169, 105, 41);
+        JButton btnSubmit = new JButton("LOGIN"); btnSubmit.setBounds(73, 169, 105, 41);
         getContentPane().add(btnSubmit);
         btnSubmit.addActionListener(e -> handleLogin());
-
-        txtUsername.addActionListener(e -> handleLogin());
-        txtPassword.addActionListener(e -> handleLogin());
-    }
+        // Key binding: press Enter to trigger the button
+        btnSubmit.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW) 
+                 .put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "pressLogin");
+        btnSubmit.getActionMap().put("pressLogin", new AbstractAction() {
+        	@Override 
+        	public void actionPerformed(ActionEvent e) {
+        		btnSubmit.doClick();
+        		} 
+        	});
+        }
 
     private void handleLogin() {
         String username = txtUsername.getText().trim();
@@ -116,3 +122,4 @@ public class login extends JFrame {
         }
     }
 }
+
