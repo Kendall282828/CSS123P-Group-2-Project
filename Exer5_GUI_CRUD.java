@@ -1,9 +1,12 @@
-package pckExer;
+package pckDemo;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
 import javax.swing.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 class Car {
     int id;
@@ -13,7 +16,7 @@ class Car {
     double rate;
     boolean isAvailable;
     String separator = "   |   ";
-
+    
     public Car(int id, String make, String model, int year, double rate, boolean isAvailable) {
         this.id = id;
         this.make = make;
@@ -37,9 +40,8 @@ public class Exer5_GUI_CRUD extends JFrame implements ActionListener {
     JButton U = new JButton("Update");
     JButton D = new JButton("Delete");
     JTextArea textArea;
-
-    // Database as an ArrayList
-    ArrayList<Car> cars = new ArrayList<>();
+    
+    Connection conn;
 
     public Exer5_GUI_CRUD() {
         // Setup frame
@@ -74,17 +76,18 @@ public class Exer5_GUI_CRUD extends JFrame implements ActionListener {
         add(top, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
 
-        // Initialize fake database with some cars
-        initializeDatabase();
-
+        connectDatabase();
+        
         setVisible(true);
     }
-
-    private void initializeDatabase() {
-        cars.add(new Car(1, "Toyota", "Corolla", 2020, 35.0, true));
-        cars.add(new Car(2, "Honda", "Civic", 2019, 30.0, true));
-        cars.add(new Car(3, "Ford", "Mustang", 2021, 50.0, false));
-        cars.add(new Car(4, "Chevrolet", "Camaro", 2022, 55.0, true));
+    
+    private void connectDatabase() {
+    	try {
+    		conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/car_rental_agency","root","root");
+    		textArea.setText("Connected to database");
+    	} catch (Exception e) {
+    		textArea.setText("Database connection failed");
+    	}
     }
 
     @Override
@@ -92,92 +95,146 @@ public class Exer5_GUI_CRUD extends JFrame implements ActionListener {
         Object source = e.getSource();
 
         if (source == C) {
-            // Create a new car
-            try {
+        	try {
                 int id = Integer.parseInt(JOptionPane.showInputDialog("Enter Car ID:"));
-                Car found = findCarById(id);
-                
-                if (found != null){
-                    textArea.setText("Car already exists.\n\n" + found.toString());
-                }
-                else if (id<=0){
-                    textArea.setText("ID value is invalid.");
-                }
-                else {
-                    String make = JOptionPane.showInputDialog("Enter Make:");
-                    String model = JOptionPane.showInputDialog("Enter Model:");
-                    int year = Integer.parseInt(JOptionPane.showInputDialog("Enter Year:"));
-                    double rate = Double.parseDouble(JOptionPane.showInputDialog("Enter Rate:"));
-                    boolean isAvailable = JOptionPane.showConfirmDialog(null, "Is the car available?", "Availability", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+                String make = JOptionPane.showInputDialog("Enter Make:");
+                String model = JOptionPane.showInputDialog("Enter Model:");
+                int year = Integer.parseInt(JOptionPane.showInputDialog("Enter Year:"));
+                double rate = Double.parseDouble(JOptionPane.showInputDialog("Enter Rate:"));
+                boolean isAvailable = JOptionPane.showConfirmDialog(null,
+                        "Is the car available?",
+                        "Availability",
+                        JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
 
-                    cars.add(new Car(id, make, model, year, rate, isAvailable));
-                    textArea.setText("Car added successfully!\n\n" + listAllCars());
-                }
+                String sql = "INSERT INTO Car VALUES (?, ?, ?, ?, ?, ?)";
+                PreparedStatement pst = conn.prepareStatement(sql);
+                pst.setInt(1, id);
+                pst.setString(2, make);
+                pst.setString(3, model);
+                pst.setInt(4, year);
+                pst.setDouble(5, rate);
+                pst.setBoolean(6, isAvailable);
+
+                pst.executeUpdate();
+                textArea.setText("Car added successfully!");
+
             } catch (Exception ex) {
-                textArea.setText("Error creating car. Please enter valid data.");
+                textArea.setText("Error inserting car.");
             }
         } else if (source == R) {
-            // Read a car
-            try {
-                int id = Integer.parseInt(JOptionPane.showInputDialog("Enter Car ID to read or '0' to show all:"));
-                if(id == 0){
-                    textArea.setText(listAllCars());
+        	try {
+                int id = Integer.parseInt(
+                        JOptionPane.showInputDialog("Enter Car ID or 0 for all:")
+                );
+
+                if (id == 0) {
+
+                    String sql = "SELECT * FROM Car";
+                    PreparedStatement pst = conn.prepareStatement(sql);
+                    ResultSet rs = pst.executeQuery();
+
+                    StringBuilder sb = new StringBuilder();
+
+                    while (rs.next()) {
+                        sb.append("ID: ").append(rs.getInt("car_id"))
+                          .append(" | Make: ").append(rs.getString("make"))
+                          .append(" | Model: ").append(rs.getString("model"))
+                          .append(" | Year: ").append(rs.getInt("year"))
+                          .append(" | Rate: ").append(rs.getDouble("rate"))
+                          .append(" | Available: ").append(rs.getBoolean("is_available"))
+                          .append("\n");
+                    }
+
+                    textArea.setText(sb.toString());
+
+                } else {
+
+                    String sql = "SELECT * FROM Car WHERE car_id=?";
+                    PreparedStatement pst = conn.prepareStatement(sql);
+                    pst.setInt(1, id);
+                    ResultSet rs = pst.executeQuery();
+
+                    if (rs.next()) {
+                        textArea.setText(
+                            "ID: " + rs.getInt("car_id") +
+                            " | Make: " + rs.getString("make") +
+                            " | Model: " + rs.getString("model") +
+                            " | Year: " + rs.getInt("year") +
+                            " | Rate: " + rs.getDouble("rate") +
+                            " | Available: " + rs.getBoolean("is_available")
+                        );
+                    } else {
+                        textArea.setText("Car not found.");
+                    }
                 }
-                else{
-                    Car found = findCarById(id);
-                    textArea.setText(found != null ? found.toString() : "Car not found.");
-                }
+
             } catch (Exception ex) {
-                textArea.setText("Invalid input.");
+                textArea.setText("Error reading data.");
             }
         } else if (source == U) {
-            // Update a car
-            try {
-                int id = Integer.parseInt(JOptionPane.showInputDialog("Enter Car ID to update:"));
-                Car car = findCarById(id);
-                if (car != null) {
-                    car.make = JOptionPane.showInputDialog("Enter new Make:", car.make);
-                    car.model = JOptionPane.showInputDialog("Enter new Model:", car.model);
-                    car.year = Integer.parseInt(JOptionPane.showInputDialog("Enter new Year:", car.year));
-                    car.rate = Double.parseDouble(JOptionPane.showInputDialog("Enter new Rate:", car.rate));
-                    car.isAvailable = JOptionPane.showConfirmDialog(null, "Is the car available?", "Availability", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
-                    textArea.setText("Car updated successfully!\n\n" + car.toString());
-                } else {
+        	try {
+                int id = Integer.parseInt(
+                        JOptionPane.showInputDialog("Enter Car ID to update:")
+                );
+
+                String make = JOptionPane.showInputDialog("Enter new Make:");
+                String model = JOptionPane.showInputDialog("Enter new Model:");
+                int year = Integer.parseInt(
+                        JOptionPane.showInputDialog("Enter new Year:")
+                );
+                double rate = Double.parseDouble(
+                        JOptionPane.showInputDialog("Enter new Rate:")
+                );
+                boolean isAvailable = JOptionPane.showConfirmDialog(null,
+                        "Is the car available?",
+                        "Availability",
+                        JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+
+                String sql = "UPDATE Car SET make=?, model=?, year=?, rate=?, is_available=? WHERE car_id=?";
+                PreparedStatement pst = conn.prepareStatement(sql);
+
+                pst.setString(1, make);
+                pst.setString(2, model);
+                pst.setInt(3, year);
+                pst.setDouble(4, rate);
+                pst.setBoolean(5, isAvailable);
+                pst.setInt(6, id);
+
+                int rows = pst.executeUpdate();
+
+                if (rows > 0)
+                    textArea.setText("Car updated successfully.");
+                else
                     textArea.setText("Car not found.");
-                }
+
             } catch (Exception ex) {
                 textArea.setText("Error updating car.");
             }
         } else if (source == D) {
-            // Delete a car
-            try {
-                int id = Integer.parseInt(JOptionPane.showInputDialog("Enter Car ID to delete:"));
-                Car car = findCarById(id);
-                if (car != null) {
-                    cars.remove(car);
-                    textArea.setText("Car deleted successfully!\n\n" + listAllCars());
-                } else {
+        	try {
+                int id = Integer.parseInt(
+                        JOptionPane.showInputDialog("Enter Car ID to delete:")
+                );
+
+                String sql = "DELETE FROM Car WHERE car_id=?";
+                PreparedStatement pst = conn.prepareStatement(sql);
+                pst.setInt(1, id);
+
+                int rows = pst.executeUpdate();
+
+                if (rows > 0)
+                    textArea.setText("Car deleted successfully.");
+                else
                     textArea.setText("Car not found.");
-                }
+
             } catch (Exception ex) {
-                textArea.setText("Invalid input.");
+                textArea.setText("Error deleting car.");
             }
         }
     }
-
-    private Car findCarById(int id) {
-        for (Car c : cars) {
-            if (c.id == id) return c;
-        }
-        return null;
-    }
-
-    private String listAllCars() {
-        if (cars.isEmpty()) return "No cars in the database.";
-        StringBuilder sb = new StringBuilder();
-        for (Car c : cars) {
-            sb.append(c).append("\n");
-        }
-        return sb.toString();
+    
+    //temp
+    public static void main(String[] args) {
+        new Exer5_GUI_CRUD();
     }
 }
