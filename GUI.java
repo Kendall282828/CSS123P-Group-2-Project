@@ -39,6 +39,7 @@ public class GUI extends JFrame implements ActionListener {
     JButton U = new JButton("Update");
     JButton D = new JButton("Delete");
     JButton Rent = new JButton("Rent");
+    JButton Payment = new JButton("Payment");
     JTextArea textArea;
     
     Connection conn;
@@ -66,9 +67,11 @@ public class GUI extends JFrame implements ActionListener {
             right.add(D);
         } else if (role.equals("Customer")) {
             Rent.addActionListener(this);
+            Payment.addActionListener(this);
             R.addActionListener(this);
 
             left.add(Rent);
+            left.add(Payment);
             right.add(R);
         }
 
@@ -202,14 +205,186 @@ public class GUI extends JFrame implements ActionListener {
             }
         } else if (source == Rent) {
             try {
-                int id = Integer.parseInt(JOptionPane.showInputDialog("Enter Car ID to rent:"));
-                // Rent logic to be implemented
-                textArea.setText("Rent functionality coming soon for car ID: " + id);
+        
+                // Ask customer ID
+                String customerId = JOptionPane.showInputDialog("Enter your Customer ID:");
+        
+                // Check if customer has payment method
+                String paymentCheck = "SELECT * FROM Payment WHERE customerId=?";
+                PreparedStatement paymentStmt = conn.prepareStatement(paymentCheck);
+                paymentStmt.setString(1, customerId);
+                ResultSet paymentRS = paymentStmt.executeQuery();
+        
+                if (!paymentRS.next()) {
+                    textArea.setText("You must add a payment method before renting.");
+                    return;
+                }
+        
+                // Ask action
+                String action = JOptionPane.showInputDialog("Type RENT or UNRENT:");
+        
+                if (action.equalsIgnoreCase("rent")) {
+        
+                    int carId = Integer.parseInt(
+                            JOptionPane.showInputDialog("Enter Car ID:")
+                    );
+        
+                    // Check if car exists and available
+                    String carCheck = "SELECT * FROM Car WHERE car_id=?";
+                    PreparedStatement carStmt = conn.prepareStatement(carCheck);
+                    carStmt.setInt(1, carId);
+                    ResultSet carRS = carStmt.executeQuery();
+        
+                    if (carRS.next()) {
+        
+                        boolean available = carRS.getBoolean("is_available");
+        
+                        if (!available) {
+                            textArea.setText("Car is not available.");
+                            return;
+                        }
+        
+                        // Create rental request
+                        String requestId = "REQ" + System.currentTimeMillis();
+        
+                        String insertRequest = "INSERT INTO RentalRequest (request_id, customer_id, car_id, status) VALUES (?, ?, ?, 'Pending')";
+                        PreparedStatement requestStmt = conn.prepareStatement(insertRequest);
+        
+                        requestStmt.setString(1, requestId);
+                        requestStmt.setString(2, customerId);
+                        requestStmt.setInt(3, carId);
+        
+                        requestStmt.executeUpdate();
+        
+                        // Set car unavailable
+                        String updateCar = "UPDATE Car SET is_available=false WHERE car_id=?";
+                        PreparedStatement updateStmt = conn.prepareStatement(updateCar);
+                        updateStmt.setInt(1, carId);
+                        updateStmt.executeUpdate();
+        
+                        textArea.setText("Rental request created. Request ID: " + requestId);
+        
+                    } else {
+                        textArea.setText("Car not found.");
+                    }
+        
+                }
+        
+                else if (action.equalsIgnoreCase("unrent")) {
+        
+                    String requestId = JOptionPane.showInputDialog("Enter Rental Request ID:");
+        
+                    String requestCheck = "SELECT status, car_id FROM RentalRequest WHERE request_id=?";
+                    PreparedStatement requestStmt = conn.prepareStatement(requestCheck);
+                    requestStmt.setString(1, requestId);
+        
+                    ResultSet rs = requestStmt.executeQuery();
+        
+                    if (rs.next()) {
+        
+                        String status = rs.getString("status");
+                        int carId = rs.getInt("car_id");
+        
+                        if (status.equals("Pending")) {
+        
+                            String update = "UPDATE RentalRequest SET status='Cancelled' WHERE request_id=?";
+                            PreparedStatement pst = conn.prepareStatement(update);
+                            pst.setString(1, requestId);
+                            pst.executeUpdate();
+        
+                            textArea.setText("Rental request cancelled.");
+        
+                        }
+        
+                        else if (status.equals("Approved")) {
+        
+                            String update = "UPDATE RentalRequest SET status='Completed' WHERE request_id=?";
+                            PreparedStatement pst = conn.prepareStatement(update);
+                            pst.setString(1, requestId);
+                            pst.executeUpdate();
+        
+                            // Make car available again
+                            String updateCar = "UPDATE Car SET is_available=true WHERE car_id=?";
+                            PreparedStatement carStmt = conn.prepareStatement(updateCar);
+                            carStmt.setInt(1, carId);
+                            carStmt.executeUpdate();
+        
+                            textArea.setText("Rental completed. Car returned.");
+        
+                        }
+        
+                        else {
+                            textArea.setText("This request cannot be unrented.");
+                        }
+        
+                    } else {
+                        textArea.setText("Rental request not found.");
+                    }
+                }
+        
             } catch (Exception ex) {
-                textArea.setText("Error renting car: " + ex.getMessage());
+                textArea.setText("Error processing rental.");
+            }
+        } else if (source == Payment) {
+            try {
+        
+                int customerId = Integer.parseInt(
+                    JOptionPane.showInputDialog("Enter your Customer ID:")
+                ); //PLEASE REPLACE THIS PART WITH CODE THAT DETECTS THE USER'S ID
+        
+                String cardNum = JOptionPane.showInputDialog("Enter Card Number:");
+        
+                String cardName = JOptionPane.showInputDialog("Enter Card Name:");
+        
+                String cvv = JOptionPane.showInputDialog("Enter CVV:");
+        
+        
+                // Checks if payment already exists
+                String checkSQL = "SELECT * FROM Payment WHERE customerId=?";
+                PreparedStatement checkStmt = conn.prepareStatement(checkSQL);
+                checkStmt.setInt(1, customerId);
+        
+                ResultSet rs = checkStmt.executeQuery();
+        
+        
+                if (rs.next()) {
+        
+                    // Payment exists → UPDATE
+                    String updateSQL = "UPDATE Payment SET cardNum=?, cardName=?, cvv=? WHERE customerId=?";
+                    PreparedStatement updateStmt = conn.prepareStatement(updateSQL);
+        
+                    updateStmt.setString(1, cardNum);
+                    updateStmt.setString(2, cardName);
+                    updateStmt.setString(3, cvv);
+                    updateStmt.setInt(4, customerId);
+        
+                    updateStmt.executeUpdate();
+        
+                    textArea.setText("Payment information updated.");
+        
+                } else {
+        
+                    // Payment does NOT exist → INSERT
+                    String insertSQL = "INSERT INTO Payment (customerId, cardNum, cardName, cvv) VALUES (?, ?, ?, ?)";
+                    PreparedStatement insertStmt = conn.prepareStatement(insertSQL);
+        
+                    insertStmt.setInt(1, customerId);
+                    insertStmt.setString(2, cardNum);
+                    insertStmt.setString(3, cardName);
+                    insertStmt.setString(4, cvv);
+        
+                    insertStmt.executeUpdate();
+        
+                    textArea.setText("Payment method added.");
+        
+                }
+        
+            } catch (Exception ex) {
+                textArea.setText("Error processing payment method.");
             }
         }
     }
 
     public static void main(String[] args) {}
 }
+
