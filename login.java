@@ -44,7 +44,7 @@ public class login extends JFrame {
 
     public login() {
         dbConnect();
-        setTitle("Login Page - Car Rental System");
+        setTitle("Car Rental Agency — Login");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
         setSize(780, 460);
@@ -54,7 +54,8 @@ public class login extends JFrame {
         getContentPane().add(buildLeft(),  BorderLayout.WEST);
         getContentPane().add(buildRight(), BorderLayout.CENTER);
     }
-    
+
+    // ── LEFT red branding panel ──────────────────────────────────────────────
     private JPanel buildLeft() {
         JPanel p = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
@@ -105,6 +106,7 @@ public class login extends JFrame {
         return p;
     }
 
+    // ── RIGHT login form panel ───────────────────────────────────────────────
     private JPanel buildRight() {
         JPanel p = new JPanel();
         p.setBackground(PANEL_DARK);
@@ -160,6 +162,7 @@ public class login extends JFrame {
         return p;
     }
 
+    // ── Login logic ──────────────────────────────────────────────────────────
     private void handleLogin() {
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword()).trim();
@@ -178,7 +181,7 @@ public class login extends JFrame {
             if (rs.next()) {
                 String role = rs.getString("user_type");
                 JOptionPane.showMessageDialog(this, "Login Complete (" + role + ")", "Success", JOptionPane.INFORMATION_MESSAGE);
-                new Exer5_GUI_CRUD();
+                new GUI(role);
                 dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Username and/or password does not match.", "Login Failed", JOptionPane.WARNING_MESSAGE);
@@ -188,6 +191,7 @@ public class login extends JFrame {
         }
     }
 
+    // ── Helpers ──────────────────────────────────────────────────────────────
     private JLabel fieldLabel(String text) {
         JLabel l = new JLabel(text);
         l.setFont(new Font("Dialog", Font.BOLD, 10));
