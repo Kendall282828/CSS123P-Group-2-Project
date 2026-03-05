@@ -50,13 +50,21 @@ CREATE TABLE RentalRequest (
     request_id VARCHAR(50) PRIMARY KEY,
     customer_id VARCHAR(50) NOT NULL,
     car_id INT NOT NULL,  -- Changed to INT to match Car.car_id
-    status ENUM('Pending', 'Approved', 'Rejected', 'Completed') DEFAULT 'Pending',
+    status ENUM('Pending', 'Approved', 'Rejected', 'Completed' , 'Cancelled') DEFAULT 'Pending',
     request_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     start_date DATE,
     end_date DATE,
     total_cost DECIMAL(10,2),
     FOREIGN KEY (customer_id) REFERENCES Customer(customer_id) ON DELETE CASCADE,
     FOREIGN KEY (car_id) REFERENCES Car(car_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE Payment (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    customerId INT,
+    cardNum VARCHAR(20),
+    cardName VARCHAR(100),
+    cvv VARCHAR(4)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Create indexes for better performance
