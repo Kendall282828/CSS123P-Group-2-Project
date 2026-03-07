@@ -181,7 +181,7 @@ public class login extends JFrame {
             if (rs.next()) {
                 String role = rs.getString("user_type");
                 JOptionPane.showMessageDialog(this, "Login Complete (" + role + ")", "Success", JOptionPane.INFORMATION_MESSAGE);
-                new GUI(role);
+                new GUI(role, username);
                 dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Username and/or password does not match.", "Login Failed", JOptionPane.WARNING_MESSAGE);
