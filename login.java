@@ -168,7 +168,7 @@ public class login extends JFrame {
         String password = new String(txtPassword.getPassword()).trim();
 
         if (conn == null) {
-            JOptionPane.showMessageDialog(this, "No database connection.", "Error", JOptionPane.ERROR_MESSAGE);
+            styledMessage("Error", "No database connection.");
             return;
         }
         try {
@@ -180,14 +180,14 @@ public class login extends JFrame {
 
             if (rs.next()) {
                 String role = rs.getString("user_type");
-                JOptionPane.showMessageDialog(this, "Login Complete (" + role + ")", "Success", JOptionPane.INFORMATION_MESSAGE);
+                styledMessage("Success", "Login complete — Welcome, " + username + "!");
                 new GUI(role, username);
                 dispose();
             } else {
-                JOptionPane.showMessageDialog(this, "Username and/or password does not match.", "Login Failed", JOptionPane.WARNING_MESSAGE);
+                styledMessage("Login Failed", "Username and/or password does not match.");
             }
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Login error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            styledMessage("Error", "Login error: " + ex.getMessage());
         }
     }
 
@@ -258,5 +258,76 @@ public class login extends JFrame {
         b.setPreferredSize(new Dimension(0, 44));
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return b;
+    }
+
+    // ── Styled message dialog ────────────────────────────────────────────────
+    private void styledMessage(String title, String message) {
+        JDialog dialog = new JDialog(this, title, true);
+        dialog.setSize(340, 160);
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
+
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(PANEL_DARK);
+        root.setBorder(new LineBorder(BORDER_COL, 1));
+
+        JPanel strip = new JPanel();
+        strip.setBackground(RED);
+        strip.setPreferredSize(new Dimension(0, 4));
+        root.add(strip, BorderLayout.NORTH);
+
+        JPanel content = new JPanel();
+        content.setBackground(PANEL_DARK);
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBorder(new EmptyBorder(18, 24, 18, 24));
+
+        JLabel lTitle = new JLabel(title.toUpperCase());
+        lTitle.setFont(new Font("Dialog", Font.BOLD, 10));
+        lTitle.setForeground(RED);
+        lTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lMsg = new JLabel("<html>" + message + "</html>");
+        lMsg.setFont(new Font("Dialog", Font.PLAIN, 13));
+        lMsg.setForeground(WHITE);
+        lMsg.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JButton ok = new JButton("OK") {
+            boolean hov = false;
+            { addMouseListener(new MouseAdapter() {
+                public void mouseEntered(MouseEvent e) { hov = true;  repaint(); }
+                public void mouseExited (MouseEvent e) { hov = false; repaint(); }
+            }); }
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setColor(hov ? RED_DARK : RED);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.setColor(WHITE);
+                g2.setFont(getFont());
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(getText(),
+                    (getWidth()  - fm.stringWidth(getText())) / 2,
+                    (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
+                g2.dispose();
+            }
+        };
+        ok.setFont(new Font("Dialog", Font.BOLD, 12));
+        ok.setBorder(new LineBorder(RED, 1));
+        ok.setFocusPainted(false);
+        ok.setContentAreaFilled(false);
+        ok.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+        ok.setAlignmentX(Component.LEFT_ALIGNMENT);
+        ok.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        ok.addActionListener(e -> dialog.dispose());
+
+        content.add(lTitle);
+        content.add(Box.createVerticalStrut(6));
+        content.add(lMsg);
+        content.add(Box.createVerticalStrut(16));
+        content.add(ok);
+
+        root.add(content, BorderLayout.CENTER);
+        dialog.setContentPane(root);
+        dialog.getRootPane().setDefaultButton(ok);
+        dialog.setVisible(true);
     }
 }
