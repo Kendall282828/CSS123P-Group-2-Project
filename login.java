@@ -55,7 +55,6 @@ public class login extends JFrame {
         getContentPane().add(buildRight(), BorderLayout.CENTER);
     }
 
-    // ── LEFT red branding panel ──────────────────────────────────────────────
     private JPanel buildLeft() {
         JPanel p = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
@@ -106,7 +105,6 @@ public class login extends JFrame {
         return p;
     }
 
-    // ── RIGHT login form panel ───────────────────────────────────────────────
     private JPanel buildRight() {
         JPanel p = new JPanel();
         p.setBackground(PANEL_DARK);
@@ -162,7 +160,6 @@ public class login extends JFrame {
         return p;
     }
 
-    // ── Login logic ──────────────────────────────────────────────────────────
     private void handleLogin() {
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword()).trim();
@@ -191,7 +188,6 @@ public class login extends JFrame {
         }
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
     private JLabel fieldLabel(String text) {
         JLabel l = new JLabel(text);
         l.setFont(new Font("Dialog", Font.BOLD, 10));
@@ -260,7 +256,6 @@ public class login extends JFrame {
         return b;
     }
 
-    // ── Styled message dialog ────────────────────────────────────────────────
     private void styledMessage(String title, String message) {
         JDialog dialog = new JDialog(this, title, true);
         dialog.setSize(340, 160);
