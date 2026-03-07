@@ -170,22 +170,15 @@ public class login extends JFrame {
         }
         try {
             PreparedStatement pst = conn.prepareStatement(
-                "SELECT u.user_type, c.customer_id " +
-                "FROM User u " +
-                "LEFT JOIN Customer c ON u.login_id = c.login_id " +
-                "WHERE u.username=? AND u.password=?"
-            );
+                "SELECT user_type FROM User WHERE username=? AND password=?");
             pst.setString(1, username);
             pst.setString(2, password);
             ResultSet rs = pst.executeQuery();
 
             if (rs.next()) {
                 String role = rs.getString("user_type");
-                String customerId = rs.getString("customer_id"); // NULL if admin
-                
                 styledMessage("Success", "Login complete — Welcome, " + username + "!");
-                
-                new GUI(role, username, customerId);
+                new GUI(role, username);
                 dispose();
             } else {
                 styledMessage("Login Failed", "Username and/or password does not match.");
@@ -333,4 +326,3 @@ public class login extends JFrame {
         dialog.setVisible(true);
     }
 }
-
