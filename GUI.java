@@ -3,98 +3,234 @@ package pckExer;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.border.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
 class Car {
-    int id;
-    String make;
-    String model;
-    int year;
-    double rate;
-    boolean isAvailable;
+    int id; String make; String model; int year; double rate; boolean isAvailable;
     String separator = "   |   ";
-
     public Car(int id, String make, String model, int year, double rate, boolean isAvailable) {
-        this.id = id;
-        this.make = make;
-        this.model = model;
-        this.year = year;
-        this.rate = rate;
-        this.isAvailable = isAvailable;
+        this.id = id; this.make = make; this.model = model;
+        this.year = year; this.rate = rate; this.isAvailable = isAvailable;
     }
-
-    @Override
-    public String toString() {
-        return "ID: " + id + separator + "Make: " + make + separator + "Model: " + model + separator + "Year: " + year
-                + separator + "Rate: $" + rate + separator + "Available: " + isAvailable;
+    @Override public String toString() {
+        return "ID: " + id + separator + "Make: " + make + separator + "Model: " + model
+             + separator + "Year: " + year + separator + "Rate: $" + rate
+             + separator + "Available: " + isAvailable;
     }
 }
 
 public class GUI extends JFrame implements ActionListener {
+
+    static final Color BLACK      = new Color(10, 10, 10);
+    static final Color PANEL_DARK = new Color(20, 18, 16);
+    static final Color PANEL_MID  = new Color(28, 26, 23);
+    static final Color RED        = new Color(200, 57, 43);
+    static final Color RED_DARK   = new Color(160, 45, 34);
+    static final Color WHITE      = new Color(245, 240, 232);
+    static final Color GRAY       = new Color(138, 130, 120);
+    static final Color BORDER_COL = new Color(46, 43, 39);
+
     JButton C       = new JButton("Create");
     JButton R       = new JButton("Read");
     JButton U       = new JButton("Update");
     JButton D       = new JButton("Delete");
     JButton Rent    = new JButton("Rent");
     JButton Payment = new JButton("Payment");
+    JButton Logout  = new JButton("Logout");
     JTextArea textArea;
 
     Connection conn;
     String role;
-    String username; // logged-in username, used to filter customer requests
+    String username;
 
     public GUI(String role, String username) {
         this.role     = role;
         this.username = username;
 
-        setTitle("Car Rental - " + role + " (" + username + ")");
-        setSize(700, 450);
+        setTitle("Car Rental Agency — " + role);
+        setSize(820, 520);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
-
-        JPanel top   = new JPanel(new BorderLayout());
-        JPanel left  = new JPanel();
-        JPanel right = new JPanel();
-
-        if (role.equals("Admin")) {
-            C.addActionListener(this);
-            R.addActionListener(this);
-            U.addActionListener(this);
-            D.addActionListener(this);
-            left.add(C);
-            right.add(R);
-            right.add(U);
-            right.add(D);
-        } else if (role.equals("Customer")) {
-            Rent.addActionListener(this);
-            Payment.addActionListener(this);
-            R.addActionListener(this);
-            left.add(Rent);
-            left.add(Payment);
-            right.add(R);
-        }
-
-        top.add(left,  BorderLayout.WEST);
-        top.add(right, BorderLayout.EAST);
-
-        textArea = new JTextArea("Database output will appear here.", 15, 50);
-        textArea.setEditable(false);
-        JScrollPane scrollPane = new JScrollPane(textArea);
-
-        add(top,        BorderLayout.NORTH);
-        add(scrollPane, BorderLayout.CENTER);
+        setResizable(false);
+        setLocationRelativeTo(null);
+        getContentPane().setBackground(BLACK);
+        getContentPane().setLayout(new BorderLayout());
+        getContentPane().add(buildTopBar(), BorderLayout.NORTH);
+        getContentPane().add(buildCenter(), BorderLayout.CENTER);
 
         connectDatabase();
         setVisible(true);
     }
 
+    private JPanel buildTopBar() {
+        JPanel redStrip = new JPanel();
+        redStrip.setBackground(RED);
+        redStrip.setPreferredSize(new Dimension(6, 60));
+
+        JPanel titlePanel = new JPanel();
+        titlePanel.setBackground(PANEL_DARK);
+        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.X_AXIS));
+        titlePanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
+
+        JLabel appTitle = new JLabel("🚗  CAR RENTAL AGENCY");
+        appTitle.setFont(new Font("Dialog", Font.BOLD, 16));
+        appTitle.setForeground(WHITE);
+
+        JLabel roleBadge = new JLabel("  " + role.toUpperCase() + "  ");
+        roleBadge.setFont(new Font("Dialog", Font.BOLD, 10));
+        roleBadge.setForeground(role.equals("Admin") ? RED : new Color(100, 160, 255));
+        roleBadge.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(role.equals("Admin") ? new Color(200,57,43,80) : new Color(100,160,255,80), 1),
+            BorderFactory.createEmptyBorder(3, 6, 3, 6)));
+        roleBadge.setBackground(role.equals("Admin") ? new Color(200,57,43,30) : new Color(100,160,255,20));
+        roleBadge.setOpaque(true);
+
+        JLabel userLabel = new JLabel(username);
+        userLabel.setFont(new Font("Dialog", Font.PLAIN, 12));
+        userLabel.setForeground(GRAY);
+
+        titlePanel.add(appTitle);
+        titlePanel.add(Box.createHorizontalStrut(12));
+        titlePanel.add(roleBadge);
+        titlePanel.add(Box.createHorizontalGlue());
+        titlePanel.add(userLabel);
+
+        JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setBackground(PANEL_DARK);
+        topBar.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COL));
+        topBar.setPreferredSize(new Dimension(0, 60));
+        topBar.add(redStrip,   BorderLayout.WEST);
+        topBar.add(titlePanel, BorderLayout.CENTER);
+        return topBar;
+    }
+
+    private JPanel buildCenter() {
+        JPanel center = new JPanel(new BorderLayout());
+        center.setBackground(BLACK);
+        center.add(buildSidebar(), BorderLayout.WEST);
+        center.add(buildOutput(),  BorderLayout.CENTER);
+        return center;
+    }
+
+    private JPanel buildSidebar() {
+        JPanel sidebar = new JPanel();
+        sidebar.setBackground(PANEL_DARK);
+        sidebar.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 0, 1, BORDER_COL),
+            BorderFactory.createEmptyBorder(20, 16, 20, 16)));
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        sidebar.setPreferredSize(new Dimension(160, 0));
+
+        JLabel sectionLabel = new JLabel("ACTIONS");
+        sectionLabel.setFont(new Font("Dialog", Font.BOLD, 9));
+        sectionLabel.setForeground(GRAY);
+        sectionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        sidebar.add(sectionLabel);
+        sidebar.add(Box.createVerticalStrut(12));
+
+        if (role.equals("Admin")) {
+            sidebar.add(sidebarButton(C, true));
+            sidebar.add(Box.createVerticalStrut(6));
+            sidebar.add(sidebarButton(R, false));
+            sidebar.add(Box.createVerticalStrut(6));
+            sidebar.add(sidebarButton(U, false));
+            sidebar.add(Box.createVerticalStrut(6));
+            sidebar.add(sidebarButton(D, false));
+            C.addActionListener(this); R.addActionListener(this);
+            U.addActionListener(this); D.addActionListener(this);
+        } else if (role.equals("Customer")) {
+            sidebar.add(sidebarButton(Rent, true));
+            sidebar.add(Box.createVerticalStrut(6));
+            sidebar.add(sidebarButton(Payment, false));
+            sidebar.add(Box.createVerticalStrut(6));
+            sidebar.add(sidebarButton(R, false));
+            Rent.addActionListener(this);
+            Payment.addActionListener(this);
+            R.addActionListener(this);
+        }
+
+        sidebar.add(Box.createVerticalGlue());
+        sidebar.add(Box.createVerticalStrut(6));
+        sidebar.add(sidebarButton(Logout, false));
+        Logout.addActionListener(this);
+
+        return sidebar;
+    }
+
+    private JPanel buildOutput() {
+        JPanel outputPanel = new JPanel(new BorderLayout());
+        outputPanel.setBackground(BLACK);
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(PANEL_MID);
+        header.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COL),
+            BorderFactory.createEmptyBorder(8, 16, 8, 16)));
+        JLabel headerLabel = new JLabel("OUTPUT");
+        headerLabel.setFont(new Font("Dialog", Font.BOLD, 9));
+        headerLabel.setForeground(GRAY);
+        header.add(headerLabel, BorderLayout.WEST);
+
+        textArea = new JTextArea("Database output will appear here.");
+        textArea.setEditable(false);
+        textArea.setBackground(PANEL_DARK);
+        textArea.setForeground(WHITE);
+        textArea.setCaretColor(WHITE);
+        textArea.setFont(new Font("Monospaced", Font.PLAIN, 13));
+        textArea.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        textArea.setLineWrap(true);
+        textArea.setWrapStyleWord(true);
+
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, BORDER_COL));
+        scrollPane.getViewport().setBackground(PANEL_DARK);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        outputPanel.add(header,     BorderLayout.NORTH);
+        outputPanel.add(scrollPane, BorderLayout.CENTER);
+        return outputPanel;
+    }
+
+    private JButton sidebarButton(JButton btn, boolean primary) {
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btn.setFont(new Font("Dialog", Font.BOLD, 12));
+        btn.setFocusPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        Color bg    = primary ? RED      : PANEL_MID;
+        Color hover = primary ? RED_DARK : new Color(38, 36, 33);
+        Color fg    = primary ? WHITE    : GRAY;
+
+        btn.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(primary ? RED : BORDER_COL, 1),
+            BorderFactory.createEmptyBorder(8, 14, 8, 14)));
+        btn.setContentAreaFilled(false);
+        btn.setOpaque(false);
+
+        btn.setUI(new javax.swing.plaf.basic.BasicButtonUI() {
+            @Override public void paint(Graphics g, JComponent c) {
+                AbstractButton b = (AbstractButton) c;
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setColor(b.getModel().isRollover() ? hover : bg);
+                g2.fillRect(0, 0, c.getWidth(), c.getHeight());
+                g2.setColor(fg);
+                g2.setFont(b.getFont());
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(b.getText(), 14, (c.getHeight() + fm.getAscent() - fm.getDescent()) / 2);
+                g2.dispose();
+            }
+        });
+        return btn;
+    }
+
     private void connectDatabase() {
         try {
             conn = DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/car_rental_agency", "root", "Apr@2024102110");
+                "jdbc:mysql://localhost:3306/car_rental_agency", "root", "root");
             textArea.setText("Connected to database");
         } catch (Exception e) {
             textArea.setText("Database connection failed: " + e.getMessage());
@@ -105,47 +241,41 @@ public class GUI extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         Object source = e.getSource();
 
-        // ── CREATE ────────────────────────────────────────────────────────────
         if (source == C) {
             try {
-                int id       = Integer.parseInt(JOptionPane.showInputDialog("Enter Car ID:"));
-                String make  = JOptionPane.showInputDialog("Enter Make:");
-                String model = JOptionPane.showInputDialog("Enter Model:");
-                int year     = Integer.parseInt(JOptionPane.showInputDialog("Enter Year:"));
-                double rate  = Double.parseDouble(JOptionPane.showInputDialog("Enter Rate:"));
-                boolean isAvailable = JOptionPane.showConfirmDialog(null,
-                        "Is the car available?", "Availability",
-                        JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+                String idStr   = styledInput("Create Car", "Enter Car ID:");    if (idStr   == null) return;
+                String make    = styledInput("Create Car", "Enter Make:");      if (make    == null) return;
+                String model   = styledInput("Create Car", "Enter Model:");     if (model   == null) return;
+                String yearStr = styledInput("Create Car", "Enter Year:");      if (yearStr == null) return;
+                String rateStr = styledInput("Create Car", "Enter Rate:");      if (rateStr == null) return;
+                boolean avail  = styledConfirm("Create Car", "Is the car available?");
 
-                String sql = "INSERT INTO Car VALUES (?, ?, ?, ?, ?, ?)";
-                PreparedStatement pst = conn.prepareStatement(sql);
-                pst.setInt(1, id);
+                PreparedStatement pst = conn.prepareStatement("INSERT INTO Car VALUES (?, ?, ?, ?, ?, ?)");
+                pst.setInt(1, Integer.parseInt(idStr));
                 pst.setString(2, make);
                 pst.setString(3, model);
-                pst.setInt(4, year);
-                pst.setDouble(5, rate);
-                pst.setBoolean(6, isAvailable);
+                pst.setInt(4, Integer.parseInt(yearStr));
+                pst.setDouble(5, Double.parseDouble(rateStr));
+                pst.setBoolean(6, avail);
                 pst.executeUpdate();
                 textArea.setText("Car added successfully!");
             } catch (Exception ex) {
                 textArea.setText("Error inserting car: " + ex.getMessage());
             }
 
-        // ── READ ──────────────────────────────────────────────────────────────
         } else if (source == R) {
             String[] options = role.equals("Admin")
                 ? new String[]{"Cars", "All Rental Requests"}
                 : new String[]{"Cars", "My Rental Requests"};
 
-            int choice = JOptionPane.showOptionDialog(this,
-                "What would you like to view?", "Read",
-                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-                null, options, options[0]);
+            int choice = styledOption("Read", "What would you like to view?", options);
+            if (choice < 0) return;
 
             if (choice == 0) {
-                // View Cars
                 try {
-                    int id = Integer.parseInt(JOptionPane.showInputDialog("Enter Car ID or 0 for all:"));
+                    String idStr = styledInput("Read Cars", "Enter Car ID or 0 for all:");
+                    if (idStr == null) return;
+                    int id = Integer.parseInt(idStr);
                     if (id == 0) {
                         PreparedStatement pst = conn.prepareStatement("SELECT * FROM Car");
                         ResultSet rs = pst.executeQuery();
@@ -171,8 +301,7 @@ public class GUI extends JFrame implements ActionListener {
                                 " | Model: " + rs.getString("model") +
                                 " | Year: " + rs.getInt("year") +
                                 " | Rate: $" + rs.getDouble("rate") +
-                                " | Available: " + rs.getString("is_available")
-                            );
+                                " | Available: " + rs.getString("is_available"));
                         } else {
                             textArea.setText("Car not found.");
                         }
@@ -182,16 +311,12 @@ public class GUI extends JFrame implements ActionListener {
                 }
 
             } else if (choice == 1) {
-                // View Rental Requests
                 try {
                     StringBuilder sb = new StringBuilder();
-
                     if (role.equals("Admin")) {
-                        // Admin sees ALL requests with customer name and car info
                         String sql =
                             "SELECT rr.request_id, rr.status, rr.start_date, rr.end_date, rr.total_cost, " +
-                            "       c.name AS customer_name, " +
-                            "       car.make, car.model, car.year " +
+                            "       c.name AS customer_name, car.make, car.model, car.year " +
                             "FROM RentalRequest rr " +
                             "JOIN Customer c ON rr.customer_id = c.customer_id " +
                             "JOIN Car car ON rr.car_id = car.car_id " +
@@ -212,7 +337,6 @@ public class GUI extends JFrame implements ActionListener {
                               .append("\n");
                         }
                     } else {
-                        // Customer sees ONLY their own requests, filtered by username
                         String sql =
                             "SELECT rr.request_id, rr.status, rr.start_date, rr.end_date, rr.total_cost, " +
                             "       car.make, car.model, car.year " +
@@ -238,37 +362,33 @@ public class GUI extends JFrame implements ActionListener {
                               .append("\n");
                         }
                     }
-
                     textArea.setText(sb.length() > 30 ? sb.toString() : sb.toString() + "No requests found.");
                 } catch (Exception ex) {
                     textArea.setText("Error reading requests: " + ex.getMessage());
                 }
             }
 
-        // ── UPDATE ────────────────────────────────────────────────────────────
         } else if (source == U) {
-            String target = JOptionPane.showInputDialog("What would you like to update? Type CAR or REQUEST:");
+            String target = styledInput("Update", "What would you like to update?\nType CAR or REQUEST:");
             if (target == null) return;
 
             if (target.equalsIgnoreCase("car")) {
                 try {
-                    int id       = Integer.parseInt(JOptionPane.showInputDialog("Enter Car ID to update:"));
-                    String make  = JOptionPane.showInputDialog("Enter new Brand:");
-                    String model = JOptionPane.showInputDialog("Enter new Model:");
-                    int year     = Integer.parseInt(JOptionPane.showInputDialog("Enter new Year:"));
-                    double rate  = Double.parseDouble(JOptionPane.showInputDialog("Enter new Rate:"));
-                    boolean isAvailable = JOptionPane.showConfirmDialog(null,
-                            "Is the car available?", "Availability",
-                            JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
+                    String idStr   = styledInput("Update Car", "Enter Car ID to update:");  if (idStr   == null) return;
+                    String make    = styledInput("Update Car", "Enter new Make:");           if (make    == null) return;
+                    String model   = styledInput("Update Car", "Enter new Model:");          if (model   == null) return;
+                    String yearStr = styledInput("Update Car", "Enter new Year:");           if (yearStr == null) return;
+                    String rateStr = styledInput("Update Car", "Enter new Rate:");           if (rateStr == null) return;
+                    boolean avail  = styledConfirm("Update Car", "Is the car available?");
 
-                    String sql = "UPDATE Car SET make=?, model=?, year=?, rate=?, is_available=? WHERE car_id=?";
-                    PreparedStatement pst = conn.prepareStatement(sql);
+                    PreparedStatement pst = conn.prepareStatement(
+                        "UPDATE Car SET make=?, model=?, year=?, rate=?, is_available=? WHERE car_id=?");
                     pst.setString(1, make);
                     pst.setString(2, model);
-                    pst.setInt(3, year);
-                    pst.setDouble(4, rate);
-                    pst.setString(5, isAvailable ? "Yes" : "No");
-                    pst.setInt(6, id);
+                    pst.setInt(3, Integer.parseInt(yearStr));
+                    pst.setDouble(4, Double.parseDouble(rateStr));
+                    pst.setString(5, avail ? "Yes" : "No");
+                    pst.setInt(6, Integer.parseInt(idStr));
                     int rows = pst.executeUpdate();
                     textArea.setText(rows > 0 ? "Car updated successfully." : "Car not found.");
                 } catch (Exception ex) {
@@ -277,40 +397,31 @@ public class GUI extends JFrame implements ActionListener {
 
             } else if (target.equalsIgnoreCase("request")) {
                 try {
-                    String requestId = JOptionPane.showInputDialog("Enter Request ID to update:");
+                    String requestId = styledInput("Update Request", "Enter Request ID to update:");
                     if (requestId == null) return;
 
-                    // Check if request exists first
                     PreparedStatement checkStmt = conn.prepareStatement(
                         "SELECT request_id FROM RentalRequest WHERE request_id=?");
                     checkStmt.setString(1, requestId);
                     ResultSet checkRS = checkStmt.executeQuery();
-
                     if (!checkRS.next()) {
                         textArea.setText("Request ID \"" + requestId + "\" not found. Please check and try again.");
                         return;
                     }
 
-                    String[] statusOptions = {"Pending", "Approved", "Rejected", "Completed"};
-                    String newStatus = (String) JOptionPane.showInputDialog(
-                        this,
+                    String newStatus = styledDropdown("Update Request",
                         "Select new status for Request " + requestId + ":",
-                        "Update Request Status",
-                        JOptionPane.QUESTION_MESSAGE,
-                        null,
-                        statusOptions,
-                        statusOptions[0]
-                    );
+                        new String[]{"Pending", "Approved", "Rejected", "Completed"});
                     if (newStatus == null) return;
 
-                    String sql = "UPDATE RentalRequest SET status=? WHERE request_id=?";
-                    PreparedStatement pst = conn.prepareStatement(sql);
+                    PreparedStatement pst = conn.prepareStatement(
+                        "UPDATE RentalRequest SET status=? WHERE request_id=?");
                     pst.setString(1, newStatus);
                     pst.setString(2, requestId);
                     int rows = pst.executeUpdate();
                     textArea.setText(rows > 0
                         ? "Request " + requestId + " status updated to: " + newStatus
-                        : "Request ID \"" + requestId + "\" not found. Please check and try again.");
+                        : "Request ID \"" + requestId + "\" not found.");
                 } catch (Exception ex) {
                     textArea.setText("Error updating request: " + ex.getMessage());
                 }
@@ -319,47 +430,42 @@ public class GUI extends JFrame implements ActionListener {
                 textArea.setText("Invalid input. Please type CAR or REQUEST.");
             }
 
-        // ── DELETE ────────────────────────────────────────────────────────────
         } else if (source == D) {
             try {
-                int id = Integer.parseInt(JOptionPane.showInputDialog("Enter Car ID to delete:"));
+                String idStr = styledInput("Delete Car", "Enter Car ID to delete:");
+                if (idStr == null) return;
                 PreparedStatement pst = conn.prepareStatement("DELETE FROM Car WHERE car_id=?");
-                pst.setInt(1, id);
+                pst.setInt(1, Integer.parseInt(idStr));
                 int rows = pst.executeUpdate();
                 textArea.setText(rows > 0 ? "Car deleted successfully." : "Car not found.");
             } catch (Exception ex) {
                 textArea.setText("Error deleting car: " + ex.getMessage());
             }
 
-        // ── RENT ──────────────────────────────────────────────────────────────
         } else if (source == Rent) {
             try {
-                // Get customer_id from logged-in username automatically
-                String getCustomerId = "SELECT c.customer_id FROM Customer c JOIN User u ON c.login_id = u.login_id WHERE u.username=?";
-                PreparedStatement idStmt = conn.prepareStatement(getCustomerId);
+                PreparedStatement idStmt = conn.prepareStatement(
+                    "SELECT c.customer_id FROM Customer c JOIN User u ON c.login_id = u.login_id WHERE u.username=?");
                 idStmt.setString(1, username);
                 ResultSet idRS = idStmt.executeQuery();
-                if (!idRS.next()) {
-                    textArea.setText("Customer account not found.");
-                    return;
-                }
+                if (!idRS.next()) { textArea.setText("Customer account not found."); return; }
                 String customerId = idRS.getString("customer_id");
 
-                // Check if customer has payment method
-                String paymentCheck = "SELECT * FROM Payment WHERE customerId=?";
-                PreparedStatement paymentStmt = conn.prepareStatement(paymentCheck);
-                paymentStmt.setString(1, customerId);
-                ResultSet paymentRS = paymentStmt.executeQuery();
-                if (!paymentRS.next()) {
-                    textArea.setText("You must add a payment method before renting.");
+                PreparedStatement payStmt = conn.prepareStatement(
+                    "SELECT payment_id FROM Payment WHERE customerId=?");
+                payStmt.setString(1, customerId);
+                if (!payStmt.executeQuery().next()) {
+                    textArea.setText("You must add a payment method before renting.\nUse the Payment button to add one.");
                     return;
                 }
 
-                String action = JOptionPane.showInputDialog("Type RENT or UNRENT:");
+                String action = styledInput("Rent", "Type RENT or UNRENT:");
                 if (action == null) return;
 
                 if (action.equalsIgnoreCase("rent")) {
-                    int carId = Integer.parseInt(JOptionPane.showInputDialog("Enter Car ID:"));
+                    String carIdStr = styledInput("Rent", "Enter Car ID:");
+                    if (carIdStr == null) return;
+                    int carId = Integer.parseInt(carIdStr);
 
                     PreparedStatement carStmt = conn.prepareStatement("SELECT * FROM Car WHERE car_id=?");
                     carStmt.setInt(1, carId);
@@ -367,96 +473,78 @@ public class GUI extends JFrame implements ActionListener {
 
                     if (carRS.next()) {
                         if (carRS.getString("is_available").equals("No")) {
-                            textArea.setText("Car is not available.");
-                            return;
+                            textArea.setText("Car is not available."); return;
                         }
-
-                        // Generate short request ID like REQ001, REQ002, etc.
                         PreparedStatement countStmt = conn.prepareStatement("SELECT COUNT(*) FROM RentalRequest");
-                        ResultSet countRS = countStmt.executeQuery();
-                        countRS.next();
-                        int count = countRS.getInt(1) + 1;
-                        String requestId = String.format("REQ%03d", count);
-                        PreparedStatement requestStmt = conn.prepareStatement(
+                        ResultSet countRS = countStmt.executeQuery(); countRS.next();
+                        String requestId = String.format("REQ%03d", countRS.getInt(1) + 1);
+
+                        PreparedStatement reqStmt = conn.prepareStatement(
                             "INSERT INTO RentalRequest (request_id, customer_id, car_id, status) VALUES (?, ?, ?, 'Pending')");
-                        requestStmt.setString(1, requestId);
-                        requestStmt.setString(2, customerId);
-                        requestStmt.setInt(3, carId);
-                        requestStmt.executeUpdate();
+                        reqStmt.setString(1, requestId);
+                        reqStmt.setString(2, customerId);
+                        reqStmt.setInt(3, carId);
+                        reqStmt.executeUpdate();
 
-                        PreparedStatement updateStmt = conn.prepareStatement(
+                        PreparedStatement updStmt = conn.prepareStatement(
                             "UPDATE Car SET is_available='No' WHERE car_id=?");
-                        updateStmt.setInt(1, carId);
-                        updateStmt.executeUpdate();
-
+                        updStmt.setInt(1, carId);
+                        updStmt.executeUpdate();
                         textArea.setText("Rental request created. Request ID: " + requestId);
                     } else {
                         textArea.setText("Car not found.");
                     }
 
                 } else if (action.equalsIgnoreCase("unrent")) {
-                    String requestId = JOptionPane.showInputDialog("Enter Rental Request ID:");
+                    String requestId = styledInput("Unrent", "Enter Rental Request ID:");
+                    if (requestId == null) return;
 
-                    PreparedStatement requestStmt = conn.prepareStatement(
+                    PreparedStatement reqStmt = conn.prepareStatement(
                         "SELECT status, car_id FROM RentalRequest WHERE request_id=?");
-                    requestStmt.setString(1, requestId);
-                    ResultSet rs = requestStmt.executeQuery();
+                    reqStmt.setString(1, requestId);
+                    ResultSet rs = reqStmt.executeQuery();
 
                     if (rs.next()) {
                         String status = rs.getString("status");
                         int carId     = rs.getInt("car_id");
-
                         if (status.equals("Pending")) {
                             PreparedStatement pst = conn.prepareStatement(
                                 "UPDATE RentalRequest SET status='Cancelled' WHERE request_id=?");
-                            pst.setString(1, requestId);
-                            pst.executeUpdate();
+                            pst.setString(1, requestId); pst.executeUpdate();
                             textArea.setText("Rental request cancelled.");
-
                         } else if (status.equals("Approved")) {
                             PreparedStatement pst = conn.prepareStatement(
                                 "UPDATE RentalRequest SET status='Completed' WHERE request_id=?");
-                            pst.setString(1, requestId);
-                            pst.executeUpdate();
-
+                            pst.setString(1, requestId); pst.executeUpdate();
                             PreparedStatement carStmt = conn.prepareStatement(
                                 "UPDATE Car SET is_available='Yes' WHERE car_id=?");
-                            carStmt.setInt(1, carId);
-                            carStmt.executeUpdate();
+                            carStmt.setInt(1, carId); carStmt.executeUpdate();
                             textArea.setText("Rental completed. Car returned.");
-
                         } else {
                             textArea.setText("This request cannot be unrented (status: " + status + ").");
                         }
                     } else {
                         textArea.setText("Rental request not found.");
                     }
-
                 } else {
                     textArea.setText("Invalid action. Please type RENT or UNRENT.");
                 }
-
             } catch (Exception ex) {
                 textArea.setText("Error processing rental: " + ex.getMessage());
             }
 
-        // ── PAYMENT ───────────────────────────────────────────────────────────
         } else if (source == Payment) {
             try {
-                // Get customer_id from logged-in username automatically
-                String getCustomerId = "SELECT c.customer_id FROM Customer c JOIN User u ON c.login_id = u.login_id WHERE u.username=?";
-                PreparedStatement idStmt = conn.prepareStatement(getCustomerId);
+                PreparedStatement idStmt = conn.prepareStatement(
+                    "SELECT c.customer_id FROM Customer c JOIN User u ON c.login_id = u.login_id WHERE u.username=?");
                 idStmt.setString(1, username);
                 ResultSet idRS = idStmt.executeQuery();
-                if (!idRS.next()) {
-                    textArea.setText("Customer account not found.");
-                    return;
-                }
+                if (!idRS.next()) { textArea.setText("Customer account not found."); return; }
                 String customerId = idRS.getString("customer_id");
 
-                String cardNum  = JOptionPane.showInputDialog("Enter Card Number:");
-                String cardName = JOptionPane.showInputDialog("Enter Card Name:");
-                String cvv      = JOptionPane.showInputDialog("Enter CVV:");
+                String cardNum  = styledInput("Payment", "Enter Card Number:");  if (cardNum  == null) return;
+                String cardName = styledInput("Payment", "Enter Card Name:");    if (cardName == null) return;
+                String cvv      = styledInput("Payment", "Enter CVV:");          if (cvv      == null) return;
 
                 PreparedStatement checkStmt = conn.prepareStatement(
                     "SELECT * FROM Payment WHERE customerId=?");
@@ -464,29 +552,310 @@ public class GUI extends JFrame implements ActionListener {
                 ResultSet rs = checkStmt.executeQuery();
 
                 if (rs.next()) {
-                    PreparedStatement updateStmt = conn.prepareStatement(
+                    PreparedStatement pst = conn.prepareStatement(
                         "UPDATE Payment SET cardNum=?, cardName=?, cvv=? WHERE customerId=?");
-                    updateStmt.setString(1, cardNum);
-                    updateStmt.setString(2, cardName);
-                    updateStmt.setString(3, cvv);
-                    updateStmt.setString(4, customerId);
-                    updateStmt.executeUpdate();
+                    pst.setString(1, cardNum); pst.setString(2, cardName);
+                    pst.setString(3, cvv);     pst.setString(4, customerId);
+                    pst.executeUpdate();
                     textArea.setText("Payment information updated.");
                 } else {
-                    PreparedStatement insertStmt = conn.prepareStatement(
+                    PreparedStatement pst = conn.prepareStatement(
                         "INSERT INTO Payment (customerId, cardNum, cardName, cvv) VALUES (?, ?, ?, ?)");
-                    insertStmt.setString(1, customerId);
-                    insertStmt.setString(2, cardNum);
-                    insertStmt.setString(3, cardName);
-                    insertStmt.setString(4, cvv);
-                    insertStmt.executeUpdate();
+                    pst.setString(1, customerId); pst.setString(2, cardNum);
+                    pst.setString(3, cardName);   pst.setString(4, cvv);
+                    pst.executeUpdate();
                     textArea.setText("Payment method added.");
                 }
-
             } catch (Exception ex) {
-                textArea.setText("Error processing payment method: " + ex.getMessage());
+                textArea.setText("Error processing payment: " + ex.getMessage());
+            }
+
+        } else if (source == Logout) {
+            if (styledConfirm("Logout", "Are you sure you want to logout?")) {
+                new login().setVisible(true);
+                dispose();
             }
         }
+    }
+
+
+    /** Single-field text input dialog. Returns null if cancelled. */
+    private String styledInput(String title, String prompt) {
+        JDialog dialog = new JDialog(this, title, true);
+        dialog.setSize(360, 195);
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
+
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(PANEL_DARK);
+        root.setBorder(BorderFactory.createLineBorder(BORDER_COL, 1));
+
+        JPanel strip = new JPanel();
+        strip.setBackground(RED);
+        strip.setPreferredSize(new Dimension(0, 4));
+        root.add(strip, BorderLayout.NORTH);
+
+        JPanel content = new JPanel();
+        content.setBackground(PANEL_DARK);
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBorder(BorderFactory.createEmptyBorder(18, 24, 18, 24));
+
+        JLabel lTitle = new JLabel(title.toUpperCase());
+        lTitle.setFont(new Font("Dialog", Font.BOLD, 10));
+        lTitle.setForeground(RED);
+        lTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lPrompt = new JLabel("<html>" + prompt.replace("\n", "<br>") + "</html>");
+        lPrompt.setFont(new Font("Dialog", Font.PLAIN, 13));
+        lPrompt.setForeground(WHITE);
+        lPrompt.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JTextField field = new JTextField();
+        field.setBackground(PANEL_MID);
+        field.setForeground(WHITE);
+        field.setCaretColor(WHITE);
+        field.setFont(new Font("Dialog", Font.PLAIN, 13));
+        field.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(BORDER_COL, 1),
+            BorderFactory.createEmptyBorder(7, 10, 7, 10)));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+        field.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        content.add(lTitle);
+        content.add(Box.createVerticalStrut(6));
+        content.add(lPrompt);
+        content.add(Box.createVerticalStrut(10));
+        content.add(field);
+        content.add(Box.createVerticalStrut(14));
+
+        JPanel btnRow = new JPanel(new GridLayout(1, 2, 8, 0));
+        btnRow.setOpaque(false);
+        btnRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+
+        String[] result = {null};
+        JButton ok     = makeDialogBtn("OK",     RED,      RED_DARK,              WHITE);
+        JButton cancel = makeDialogBtn("Cancel", PANEL_MID, new Color(38,36,33), GRAY);
+        ok.addActionListener(ev -> { result[0] = field.getText().trim(); dialog.dispose(); });
+        cancel.addActionListener(ev -> dialog.dispose());
+        field.addActionListener(ev -> { result[0] = field.getText().trim(); dialog.dispose(); });
+
+        btnRow.add(ok); btnRow.add(cancel);
+        content.add(btnRow);
+        root.add(content, BorderLayout.CENTER);
+        dialog.setContentPane(root);
+        dialog.getRootPane().setDefaultButton(ok);
+        dialog.setVisible(true);
+        return result[0];
+    }
+
+    /** Yes/No confirm dialog. Returns true for Yes. */
+    private boolean styledConfirm(String title, String prompt) {
+        JDialog dialog = new JDialog(this, title, true);
+        dialog.setSize(340, 165);
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
+
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(PANEL_DARK);
+        root.setBorder(BorderFactory.createLineBorder(BORDER_COL, 1));
+
+        JPanel strip = new JPanel();
+        strip.setBackground(RED);
+        strip.setPreferredSize(new Dimension(0, 4));
+        root.add(strip, BorderLayout.NORTH);
+
+        JPanel content = new JPanel();
+        content.setBackground(PANEL_DARK);
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBorder(BorderFactory.createEmptyBorder(18, 24, 18, 24));
+
+        JLabel lTitle = new JLabel(title.toUpperCase());
+        lTitle.setFont(new Font("Dialog", Font.BOLD, 10));
+        lTitle.setForeground(RED);
+        lTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lPrompt = new JLabel("<html>" + prompt + "</html>");
+        lPrompt.setFont(new Font("Dialog", Font.PLAIN, 13));
+        lPrompt.setForeground(WHITE);
+        lPrompt.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        content.add(lTitle);
+        content.add(Box.createVerticalStrut(6));
+        content.add(lPrompt);
+        content.add(Box.createVerticalStrut(16));
+
+        JPanel btnRow = new JPanel(new GridLayout(1, 2, 8, 0));
+        btnRow.setOpaque(false);
+        btnRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+
+        boolean[] result = {false};
+        JButton yes = makeDialogBtn("Yes", RED,      RED_DARK,              WHITE);
+        JButton no  = makeDialogBtn("No",  PANEL_MID, new Color(38,36,33), GRAY);
+        yes.addActionListener(ev -> { result[0] = true; dialog.dispose(); });
+        no.addActionListener(ev  -> dialog.dispose());
+
+        btnRow.add(yes); btnRow.add(no);
+        content.add(btnRow);
+        root.add(content, BorderLayout.CENTER);
+        dialog.setContentPane(root);
+        dialog.setVisible(true);
+        return result[0];
+    }
+
+    /** Option chooser (multiple buttons). Returns chosen index or -1 if closed. */
+    private int styledOption(String title, String prompt, String[] options) {
+        JDialog dialog = new JDialog(this, title, true);
+        dialog.setSize(340, 165);
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
+
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(PANEL_DARK);
+        root.setBorder(BorderFactory.createLineBorder(BORDER_COL, 1));
+
+        JPanel strip = new JPanel();
+        strip.setBackground(RED);
+        strip.setPreferredSize(new Dimension(0, 4));
+        root.add(strip, BorderLayout.NORTH);
+
+        JPanel content = new JPanel();
+        content.setBackground(PANEL_DARK);
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBorder(BorderFactory.createEmptyBorder(18, 24, 18, 24));
+
+        JLabel lTitle = new JLabel(title.toUpperCase());
+        lTitle.setFont(new Font("Dialog", Font.BOLD, 10));
+        lTitle.setForeground(RED);
+        lTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lPrompt = new JLabel("<html>" + prompt + "</html>");
+        lPrompt.setFont(new Font("Dialog", Font.PLAIN, 13));
+        lPrompt.setForeground(WHITE);
+        lPrompt.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        content.add(lTitle);
+        content.add(Box.createVerticalStrut(6));
+        content.add(lPrompt);
+        content.add(Box.createVerticalStrut(14));
+
+        int[] result = {-1};
+        JPanel btnRow = new JPanel(new GridLayout(1, options.length, 8, 0));
+        btnRow.setOpaque(false);
+        btnRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+
+        for (int i = 0; i < options.length; i++) {
+            final int idx = i;
+            JButton btn = makeDialogBtn(options[i],
+                i == 0 ? RED      : PANEL_MID,
+                i == 0 ? RED_DARK : new Color(38,36,33),
+                i == 0 ? WHITE    : GRAY);
+            btn.addActionListener(ev -> { result[0] = idx; dialog.dispose(); });
+            btnRow.add(btn);
+        }
+
+        content.add(btnRow);
+        root.add(content, BorderLayout.CENTER);
+        dialog.setContentPane(root);
+        dialog.setVisible(true);
+        return result[0];
+    }
+
+    /** Dropdown (JComboBox) selection dialog. Returns selected string or null. */
+    private String styledDropdown(String title, String prompt, String[] options) {
+        JDialog dialog = new JDialog(this, title, true);
+        dialog.setSize(360, 205);
+        dialog.setLocationRelativeTo(this);
+        dialog.setResizable(false);
+
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(PANEL_DARK);
+        root.setBorder(BorderFactory.createLineBorder(BORDER_COL, 1));
+
+        JPanel strip = new JPanel();
+        strip.setBackground(RED);
+        strip.setPreferredSize(new Dimension(0, 4));
+        root.add(strip, BorderLayout.NORTH);
+
+        JPanel content = new JPanel();
+        content.setBackground(PANEL_DARK);
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBorder(BorderFactory.createEmptyBorder(18, 24, 18, 24));
+
+        JLabel lTitle = new JLabel(title.toUpperCase());
+        lTitle.setFont(new Font("Dialog", Font.BOLD, 10));
+        lTitle.setForeground(RED);
+        lTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel lPrompt = new JLabel("<html>" + prompt + "</html>");
+        lPrompt.setFont(new Font("Dialog", Font.PLAIN, 13));
+        lPrompt.setForeground(WHITE);
+        lPrompt.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JComboBox<String> combo = new JComboBox<>(options);
+        combo.setBackground(PANEL_MID);
+        combo.setForeground(WHITE);
+        combo.setFont(new Font("Dialog", Font.PLAIN, 13));
+        combo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+        combo.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        content.add(lTitle);
+        content.add(Box.createVerticalStrut(6));
+        content.add(lPrompt);
+        content.add(Box.createVerticalStrut(10));
+        content.add(combo);
+        content.add(Box.createVerticalStrut(14));
+
+        JPanel btnRow = new JPanel(new GridLayout(1, 2, 8, 0));
+        btnRow.setOpaque(false);
+        btnRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+        btnRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+
+        String[] result = {null};
+        JButton ok     = makeDialogBtn("OK",     RED,      RED_DARK,              WHITE);
+        JButton cancel = makeDialogBtn("Cancel", PANEL_MID, new Color(38,36,33), GRAY);
+        ok.addActionListener(ev -> { result[0] = (String) combo.getSelectedItem(); dialog.dispose(); });
+        cancel.addActionListener(ev -> dialog.dispose());
+
+        btnRow.add(ok); btnRow.add(cancel);
+        content.add(btnRow);
+        root.add(content, BorderLayout.CENTER);
+        dialog.setContentPane(root);
+        dialog.getRootPane().setDefaultButton(ok);
+        dialog.setVisible(true);
+        return result[0];
+    }
+
+    /** Small button used inside all dialogs. */
+    private JButton makeDialogBtn(String text, Color bg, Color hoverBg, Color fg) {
+        JButton b = new JButton(text) {
+            boolean hov = false;
+            { addMouseListener(new MouseAdapter() {
+                public void mouseEntered(MouseEvent ev) { hov = true;  repaint(); }
+                public void mouseExited (MouseEvent ev) { hov = false; repaint(); }
+            }); }
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setColor(hov ? hoverBg : bg);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.setColor(fg);
+                g2.setFont(getFont());
+                FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(getText(),
+                    (getWidth()  - fm.stringWidth(getText())) / 2,
+                    (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
+                g2.dispose();
+            }
+        };
+        b.setFont(new Font("Dialog", Font.BOLD, 12));
+        b.setBorder(BorderFactory.createLineBorder(bg.equals(PANEL_MID) ? BORDER_COL : bg, 1));
+        b.setFocusPainted(false);
+        b.setContentAreaFilled(false);
+        b.setPreferredSize(new Dimension(0, 34));
+        b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return b;
     }
 
     public static void main(String[] args) {}
