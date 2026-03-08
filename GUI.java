@@ -230,7 +230,7 @@ public class GUI extends JFrame implements ActionListener {
     private void connectDatabase() {
         try {
             conn = DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/car_rental_agency", "root", "root");
+                "jdbc:mysql://localhost:3306/car_rental_agency", "root", "Apr@2024102110");
             textArea.setText("Connected to database");
         } catch (Exception e) {
             textArea.setText("Database connection failed: " + e.getMessage());
@@ -315,8 +315,8 @@ public class GUI extends JFrame implements ActionListener {
                     StringBuilder sb = new StringBuilder();
                     if (role.equals("Admin")) {
                         String sql =
-                            "SELECT rr.request_id, rr.status, rr.start_date, rr.end_date, rr.total_cost, " +
-                            "       c.name AS customer_name, car.make, car.model, car.year " +
+                            "SELECT rr.request_id, rr.status, " +
+                            "       c.name AS customer_name, car.make, car.model, car.year, car.rate " +
                             "FROM RentalRequest rr " +
                             "JOIN Customer c ON rr.customer_id = c.customer_id " +
                             "JOIN Car car ON rr.car_id = car.car_id " +
@@ -331,15 +331,13 @@ public class GUI extends JFrame implements ActionListener {
                                                  .append(rs.getString("model")).append(" (")
                                                  .append(rs.getInt("year")).append(")")
                               .append(" | Status: ").append(rs.getString("status"))
-                              .append(" | From: ").append(rs.getString("start_date"))
-                              .append(" To: ").append(rs.getString("end_date"))
-                              .append(" | Total: $").append(rs.getDouble("total_cost"))
+                              .append(" | Daily Rate: $").append(rs.getDouble("rate"))
                               .append("\n");
                         }
                     } else {
                         String sql =
-                            "SELECT rr.request_id, rr.status, rr.start_date, rr.end_date, rr.total_cost, " +
-                            "       car.make, car.model, car.year " +
+                            "SELECT rr.request_id, rr.status, " +
+                            "       car.make, car.model, car.year, car.rate " +
                             "FROM RentalRequest rr " +
                             "JOIN Customer c ON rr.customer_id = c.customer_id " +
                             "JOIN User u ON c.login_id = u.login_id " +
@@ -356,9 +354,7 @@ public class GUI extends JFrame implements ActionListener {
                                                  .append(rs.getString("model")).append(" (")
                                                  .append(rs.getInt("year")).append(")")
                               .append(" | Status: ").append(rs.getString("status"))
-                              .append(" | From: ").append(rs.getString("start_date"))
-                              .append(" To: ").append(rs.getString("end_date"))
-                              .append(" | Total: $").append(rs.getDouble("total_cost"))
+                              .append(" | Daily Rate: $").append(rs.getDouble("rate"))
                               .append("\n");
                         }
                     }
@@ -381,6 +377,13 @@ public class GUI extends JFrame implements ActionListener {
                     String rateStr = styledInput("Update Car", "Enter new Rate:");           if (rateStr == null) return;
                     boolean avail  = styledConfirm("Update Car", "Is the car available?");
 
+                    int carId = Integer.parseInt(idStr);
+
+                    PreparedStatement cancelPst = conn.prepareStatement(
+                        "UPDATE RentalRequest SET status='Cancelled' WHERE car_id=? AND status IN ('Pending', 'Approved')");
+                    cancelPst.setInt(1, carId);
+                    int cancelled = cancelPst.executeUpdate();
+
                     PreparedStatement pst = conn.prepareStatement(
                         "UPDATE Car SET make=?, model=?, year=?, rate=?, is_available=? WHERE car_id=?");
                     pst.setString(1, make);
@@ -388,9 +391,16 @@ public class GUI extends JFrame implements ActionListener {
                     pst.setInt(3, Integer.parseInt(yearStr));
                     pst.setDouble(4, Double.parseDouble(rateStr));
                     pst.setString(5, avail ? "Yes" : "No");
-                    pst.setInt(6, Integer.parseInt(idStr));
+                    pst.setInt(6, carId);
                     int rows = pst.executeUpdate();
-                    textArea.setText(rows > 0 ? "Car updated successfully." : "Car not found.");
+
+                    if (rows > 0) {
+                        String msg = "Car updated successfully.";
+                        if (cancelled > 0) msg += "\n" + cancelled + " rental request(s) cancelled due to car update.";
+                        textArea.setText(msg);
+                    } else {
+                        textArea.setText("Car not found.");
+                    }
                 } catch (Exception ex) {
                     textArea.setText("Error updating car: " + ex.getMessage());
                 }
@@ -401,13 +411,14 @@ public class GUI extends JFrame implements ActionListener {
                     if (requestId == null) return;
 
                     PreparedStatement checkStmt = conn.prepareStatement(
-                        "SELECT request_id FROM RentalRequest WHERE request_id=?");
+                        "SELECT request_id, car_id FROM RentalRequest WHERE request_id=?");
                     checkStmt.setString(1, requestId);
                     ResultSet checkRS = checkStmt.executeQuery();
                     if (!checkRS.next()) {
                         textArea.setText("Request ID \"" + requestId + "\" not found. Please check and try again.");
                         return;
                     }
+                    int carId = checkRS.getInt("car_id");
 
                     String newStatus = styledDropdown("Update Request",
                         "Select new status for Request " + requestId + ":",
@@ -419,6 +430,21 @@ public class GUI extends JFrame implements ActionListener {
                     pst.setString(1, newStatus);
                     pst.setString(2, requestId);
                     int rows = pst.executeUpdate();
+
+                    if (rows > 0 && newStatus.equals("Rejected")) {
+                        PreparedStatement carPst = conn.prepareStatement(
+                            "UPDATE Car SET is_available='Yes' WHERE car_id=?");
+                        carPst.setInt(1, carId);
+                        carPst.executeUpdate();
+                    }
+
+                    if (rows > 0 && newStatus.equals("Approved")) {
+                        PreparedStatement carPst = conn.prepareStatement(
+                            "UPDATE Car SET is_available='No' WHERE car_id=?");
+                        carPst.setInt(1, carId);
+                        carPst.executeUpdate();
+                    }
+
                     textArea.setText(rows > 0
                         ? "Request " + requestId + " status updated to: " + newStatus
                         : "Request ID \"" + requestId + "\" not found.");
@@ -511,7 +537,10 @@ public class GUI extends JFrame implements ActionListener {
                             PreparedStatement pst = conn.prepareStatement(
                                 "UPDATE RentalRequest SET status='Cancelled' WHERE request_id=?");
                             pst.setString(1, requestId); pst.executeUpdate();
-                            textArea.setText("Rental request cancelled.");
+                            PreparedStatement carStmt = conn.prepareStatement(
+                                "UPDATE Car SET is_available='Yes' WHERE car_id=?");
+                            carStmt.setInt(1, carId); carStmt.executeUpdate();
+                            textArea.setText("Rental request cancelled. Car is now available.");
                         } else if (status.equals("Approved")) {
                             PreparedStatement pst = conn.prepareStatement(
                                 "UPDATE RentalRequest SET status='Completed' WHERE request_id=?");
