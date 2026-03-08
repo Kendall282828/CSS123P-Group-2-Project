@@ -230,7 +230,7 @@ public class GUI extends JFrame implements ActionListener {
     private void connectDatabase() {
         try {
             conn = DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/car_rental_agency", "root", "Apr@2024102110");
+                "jdbc:mysql://localhost:3306/car_rental_agency", "root", "root");
             textArea.setText("Connected to database");
         } catch (Exception e) {
             textArea.setText("Database connection failed: " + e.getMessage());
@@ -889,3 +889,4 @@ public class GUI extends JFrame implements ActionListener {
 
     public static void main(String[] args) {}
 }
+
