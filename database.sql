@@ -116,6 +116,8 @@ INSERT INTO Customer (customer_id, login_id, name) VALUES
 ('CUST001', 'U001', 'John Smith'),
 ('CUST002', 'U002', 'Jane Doe');
 
+
+
 -- Admins
 INSERT INTO Admin (admin_id, login_id, name) VALUES
 ('ADM001', 'U003', 'Sarah Johnson'),
@@ -261,6 +263,13 @@ BEGIN
         SELECT 'Error' AS result, 'Car is not available' AS message;
     END IF;
 END$$
+
+ALTER TABLE RentalRequest 
+ADD COLUMN car_make VARCHAR(100),
+ADD COLUMN car_model VARCHAR(100),
+ADD COLUMN car_year INT;
+
+
 
 CREATE PROCEDURE ReturnCar(
     IN p_car_id INT,
