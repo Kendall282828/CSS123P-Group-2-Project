@@ -35,7 +35,7 @@ public class login extends JFrame {
     public static void dbConnect() {
         try {
             conn = DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/car_rental_agency", "root", "root");
+                "jdbc:mysql://localhost:3306/car_rental_agency", "root", "Apr@2024102110");
         } catch (Exception e) {
             System.err.println("DB connection failed: " + e.getMessage());
             conn = null;
