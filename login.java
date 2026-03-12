@@ -9,6 +9,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+/**
+ * Login JFrame for Car Rental Agency
+ * Handles GUI for user login, connects to MySQL DB, 
+ * and opens main GUI after successful authentication.
+ */
 public class login extends JFrame {
 
     static final Color BLACK      = new Color(10, 10, 10);
@@ -22,28 +27,34 @@ public class login extends JFrame {
 
     private JTextField     txtUsername;
     private JPasswordField txtPassword;
+
+    // Database connection
     static  Connection     conn;
 
+    // ====== MAIN METHOD ======
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
+            // Use cross-platform look and feel
             try { UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()); }
             catch (Exception ignored) {}
-            new login().setVisible(true);
+            new login().setVisible(true); // Open login window
         });
     }
 
+    // ====== DATABASE CONNECTION ======
     public static void dbConnect() {
         try {
             conn = DriverManager.getConnection(
                 "jdbc:mysql://localhost:3306/car_rental_agency", "root", "Apr@2024102110");
         } catch (Exception e) {
             System.err.println("DB connection failed: " + e.getMessage());
-            conn = null;
+            conn = null; // Null if failed
         }
     }
 
+     // ====== CONSTRUCTOR ======
     public login() {
-        dbConnect();
+        dbConnect(); // Connect to database
         setTitle("Car Rental Agency — Login");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
@@ -55,6 +66,7 @@ public class login extends JFrame {
         getContentPane().add(buildRight(), BorderLayout.CENTER);
     }
 
+    // ====== LEFT PANEL (INFO + DESIGN) ======
     private JPanel buildLeft() {
         JPanel p = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
@@ -105,6 +117,7 @@ public class login extends JFrame {
         return p;
     }
 
+    // ====== RIGHT PANEL (LOGIN FORM) ======
     private JPanel buildRight() {
         JPanel p = new JPanel();
         p.setBackground(PANEL_DARK);
@@ -119,6 +132,7 @@ public class login extends JFrame {
         g.weightx = 1.0;
         g.gridx   = 0;
 
+        // Heading
         JLabel heading = new JLabel("WELCOME BACK");
         heading.setFont(new Font("Dialog", Font.BOLD, 26));
         heading.setForeground(WHITE);
@@ -131,18 +145,21 @@ public class login extends JFrame {
         g.gridy = 1; g.insets = new Insets(4, 0, 28, 0);
         p.add(sub, g);
 
+        // Username field
         g.gridy = 2; g.insets = new Insets(0, 0, 4, 0);
         p.add(fieldLabel("USERNAME"), g);
         txtUsername = styledTextField();
         g.gridy = 3; g.insets = new Insets(0, 0, 18, 0);
         p.add(txtUsername, g);
 
+        // Password field
         g.gridy = 4; g.insets = new Insets(0, 0, 4, 0);
         p.add(fieldLabel("PASSWORD"), g);
         txtPassword = styledPasswordField();
         g.gridy = 5; g.insets = new Insets(0, 0, 28, 0);
         p.add(txtPassword, g);
 
+        // Buttons row
         JPanel btnRow = new JPanel(new GridLayout(1, 2, 10, 0));
         btnRow.setOpaque(false);
         JButton btnLogin = styledButton("LOGIN", RED,        RED_DARK, WHITE);
@@ -152,6 +169,7 @@ public class login extends JFrame {
         g.gridy = 6; g.insets = new Insets(0, 0, 0, 0);
         p.add(btnRow, g);
 
+        // ====== EVENT HANDLERS ======
         btnLogin.addActionListener(e -> handleLogin());
         btnClear.addActionListener(e -> { txtUsername.setText(""); txtPassword.setText(""); });
         txtUsername.addActionListener(e -> txtPassword.requestFocus());
@@ -160,6 +178,7 @@ public class login extends JFrame {
         return p;
     }
 
+    // ====== HANDLE LOGIN ======
     private void handleLogin() {
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword()).trim();
@@ -176,10 +195,11 @@ public class login extends JFrame {
             ResultSet rs = pst.executeQuery();
 
             if (rs.next()) {
+                // Successful login
                 String role = rs.getString("user_type");
                 styledMessage("Success", "Login complete — Welcome, " + username + "!");
-                new GUI(role, username);
-                dispose();
+                new GUI(role, username); // Open main GUI
+                dispose(); // Close login
             } else {
                 styledMessage("Login Failed", "Username and/or password does not match.");
             }
@@ -188,6 +208,9 @@ public class login extends JFrame {
         }
     }
 
+    // ====== HELPER METHODS ======
+
+    // Label for input fields
     private JLabel fieldLabel(String text) {
         JLabel l = new JLabel(text);
         l.setFont(new Font("Dialog", Font.BOLD, 10));
@@ -195,18 +218,21 @@ public class login extends JFrame {
         return l;
     }
 
+    // Styled text input
     private JTextField styledTextField() {
         JTextField f = new JTextField();
         styleInput(f);
         return f;
     }
 
+    // Styled password input
     private JPasswordField styledPasswordField() {
         JPasswordField f = new JPasswordField();
         styleInput(f);
         return f;
     }
 
+    // Apply consistent styling to input fields
     private void styleInput(JComponent f) {
         if (f instanceof JTextField) {
             ((JTextField) f).setBackground(INPUT_BG);
@@ -214,6 +240,8 @@ public class login extends JFrame {
             ((JTextField) f).setCaretColor(WHITE);
             ((JTextField) f).setFont(new Font("Dialog", Font.PLAIN, 14));
         }
+
+        // Normal and focused border
         Border normal = new CompoundBorder(
             new LineBorder(BORDER_COL, 1), new EmptyBorder(10, 12, 10, 12));
         Border focused = new CompoundBorder(
@@ -226,6 +254,7 @@ public class login extends JFrame {
         });
     }
 
+    // Styled button with hover effect
     private JButton styledButton(String text, Color bg, Color hoverBg, Color fg) {
         JButton b = new JButton(text) {
             boolean hovered = false;
@@ -256,6 +285,7 @@ public class login extends JFrame {
         return b;
     }
 
+    // Custom styled message dialog
     private void styledMessage(String title, String message) {
         JDialog dialog = new JDialog(this, title, true);
         dialog.setSize(340, 160);
@@ -266,11 +296,13 @@ public class login extends JFrame {
         root.setBackground(PANEL_DARK);
         root.setBorder(new LineBorder(BORDER_COL, 1));
 
+        // Top colored strip
         JPanel strip = new JPanel();
         strip.setBackground(RED);
         strip.setPreferredSize(new Dimension(0, 4));
         root.add(strip, BorderLayout.NORTH);
 
+        // Content panel with message
         JPanel content = new JPanel();
         content.setBackground(PANEL_DARK);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
@@ -286,6 +318,7 @@ public class login extends JFrame {
         lMsg.setForeground(WHITE);
         lMsg.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        // OK button
         JButton ok = new JButton("OK") {
             boolean hov = false;
             { addMouseListener(new MouseAdapter() {
@@ -326,3 +359,4 @@ public class login extends JFrame {
         dialog.setVisible(true);
     }
 }
+
