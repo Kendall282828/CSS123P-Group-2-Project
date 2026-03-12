@@ -230,7 +230,7 @@ public class GUI extends JFrame implements ActionListener {
     private void connectDatabase() {
         try {
             conn = DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/car_rental_agency", "root", "root");
+                "jdbc:mysql://localhost:3306/car_rental_agency", "root", "Apr@2024102110");
             textArea.setText("Connected to database");
         } catch (Exception e) {
             textArea.setText("Database connection failed: " + e.getMessage());
@@ -250,13 +250,13 @@ public class GUI extends JFrame implements ActionListener {
                 String rateStr = styledInput("Create Car", "Enter Rate:");      if (rateStr == null) return;
                 boolean avail  = styledConfirm("Create Car", "Is the car available?");
 
-                PreparedStatement pst = conn.prepareStatement("INSERT INTO Car VALUES (?, ?, ?, ?, ?, ?)");
+                PreparedStatement pst = conn.prepareStatement("INSERT INTO Car (car_id, make, model, year, rate, is_available) VALUES (?, ?, ?, ?, ?, ?)");
                 pst.setInt(1, Integer.parseInt(idStr));
                 pst.setString(2, make);
                 pst.setString(3, model);
                 pst.setInt(4, Integer.parseInt(yearStr));
                 pst.setDouble(5, Double.parseDouble(rateStr));
-                pst.setBoolean(6, avail);
+                pst.setString(6, avail ? "Yes" : "No");
                 pst.executeUpdate();
                 textArea.setText("Car added successfully!");
             } catch (Exception ex) {
@@ -315,7 +315,7 @@ public class GUI extends JFrame implements ActionListener {
                     StringBuilder sb = new StringBuilder();
                     if (role.equals("Admin")) {
                         String sql =
-                            "SELECT rr.request_id, rr.status, " +
+                            "SELECT rr.request_id, rr.status, rr.total_cost, rr.car_make, rr.car_model, rr.car_year, " +
                             "       c.name AS customer_name, car.make, car.model, car.year, car.rate " +
                             "FROM RentalRequest rr " +
                             "JOIN Customer c ON rr.customer_id = c.customer_id " +
@@ -325,18 +325,23 @@ public class GUI extends JFrame implements ActionListener {
                         ResultSet rs = pst.executeQuery();
                         sb.append("=== ALL RENTAL REQUESTS ===\n\n");
                         while (rs.next()) {
+                            boolean completed = rs.getString("status").equals("Completed");
+                            String displayMake  = completed ? rs.getString("car_make")  : rs.getString("make");
+                            String displayModel = completed ? rs.getString("car_model") : rs.getString("model");
+                            int    displayYear  = completed ? rs.getInt("car_year")     : rs.getInt("year");
+                            double displayRate  = completed ? rs.getDouble("total_cost"): rs.getDouble("rate");
                             sb.append("Request ID: ").append(rs.getString("request_id"))
                               .append(" | Customer: ").append(rs.getString("customer_name"))
-                              .append(" | Car: ").append(rs.getString("make")).append(" ")
-                                                 .append(rs.getString("model")).append(" (")
-                                                 .append(rs.getInt("year")).append(")")
+                              .append(" | Car: ").append(displayMake).append(" ")
+                                                 .append(displayModel).append(" (")
+                                                 .append(displayYear).append(")")
                               .append(" | Status: ").append(rs.getString("status"))
-                              .append(" | Daily Rate: $").append(rs.getDouble("rate"))
+                              .append(" | Daily Rate: $").append(displayRate)
                               .append("\n");
                         }
                     } else {
                         String sql =
-                            "SELECT rr.request_id, rr.status, " +
+                            "SELECT rr.request_id, rr.status, rr.total_cost, rr.car_make, rr.car_model, rr.car_year, " +
                             "       car.make, car.model, car.year, car.rate " +
                             "FROM RentalRequest rr " +
                             "JOIN Customer c ON rr.customer_id = c.customer_id " +
@@ -349,12 +354,17 @@ public class GUI extends JFrame implements ActionListener {
                         ResultSet rs = pst.executeQuery();
                         sb.append("=== MY RENTAL REQUESTS ===\n\n");
                         while (rs.next()) {
+                            boolean completed = rs.getString("status").equals("Completed");
+                            String displayMake  = completed ? rs.getString("car_make")  : rs.getString("make");
+                            String displayModel = completed ? rs.getString("car_model") : rs.getString("model");
+                            int    displayYear  = completed ? rs.getInt("car_year")     : rs.getInt("year");
+                            double displayRate  = completed ? rs.getDouble("total_cost"): rs.getDouble("rate");
                             sb.append("Request ID: ").append(rs.getString("request_id"))
-                              .append(" | Car: ").append(rs.getString("make")).append(" ")
-                                                 .append(rs.getString("model")).append(" (")
-                                                 .append(rs.getInt("year")).append(")")
+                              .append(" | Car: ").append(displayMake).append(" ")
+                                                 .append(displayModel).append(" (")
+                                                 .append(displayYear).append(")")
                               .append(" | Status: ").append(rs.getString("status"))
-                              .append(" | Daily Rate: $").append(rs.getDouble("rate"))
+                              .append(" | Daily Rate: $").append(displayRate)
                               .append("\n");
                         }
                     }
@@ -506,10 +516,14 @@ public class GUI extends JFrame implements ActionListener {
                         String requestId = String.format("REQ%03d", countRS.getInt(1) + 1);
 
                         PreparedStatement reqStmt = conn.prepareStatement(
-                            "INSERT INTO RentalRequest (request_id, customer_id, car_id, status) VALUES (?, ?, ?, 'Pending')");
+                            "INSERT INTO RentalRequest (request_id, customer_id, car_id, status, total_cost, car_make, car_model, car_year) VALUES (?, ?, ?, 'Pending', ?, ?, ?, ?)");
                         reqStmt.setString(1, requestId);
                         reqStmt.setString(2, customerId);
                         reqStmt.setInt(3, carId);
+                        reqStmt.setDouble(4, carRS.getDouble("rate"));
+                        reqStmt.setString(5, carRS.getString("make"));
+                        reqStmt.setString(6, carRS.getString("model"));
+                        reqStmt.setInt(7, carRS.getInt("year"));
                         reqStmt.executeUpdate();
 
                         PreparedStatement updStmt = conn.prepareStatement(
@@ -889,4 +903,3 @@ public class GUI extends JFrame implements ActionListener {
 
     public static void main(String[] args) {}
 }
-
