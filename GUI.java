@@ -9,13 +9,20 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+// Simple Car object used to represent a car in the system
 class Car {
     int id; String make; String model; int year; double rate; boolean isAvailable;
+    
+    // Separator used when printing car information
     String separator = "   |   ";
+
+    // Constructor initializes the car attributes
     public Car(int id, String make, String model, int year, double rate, boolean isAvailable) {
         this.id = id; this.make = make; this.model = model;
         this.year = year; this.rate = rate; this.isAvailable = isAvailable;
     }
+
+    // Converts car object to readable string format
     @Override public String toString() {
         return "ID: " + id + separator + "Make: " + make + separator + "Model: " + model
              + separator + "Year: " + year + separator + "Rate: $" + rate
@@ -47,10 +54,13 @@ public class GUI extends JFrame implements ActionListener {
     String role;
     String username;
 
+    // Constructor for the GUI window
+    // Receives the logged-in user's role and username
     public GUI(String role, String username) {
         this.role     = role;
         this.username = username;
 
+        // Window properties
         setTitle("Car Rental Agency — " + role);
         setSize(820, 520);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -61,10 +71,13 @@ public class GUI extends JFrame implements ActionListener {
         getContentPane().add(buildTopBar(), BorderLayout.NORTH);
         getContentPane().add(buildCenter(), BorderLayout.CENTER);
 
+        // Connect to database
         connectDatabase();
+        
         setVisible(true);
     }
 
+    // Graphical elements
     private JPanel buildTopBar() {
         JPanel redStrip = new JPanel();
         redStrip.setBackground(RED);
@@ -107,6 +120,7 @@ public class GUI extends JFrame implements ActionListener {
         return topBar;
     }
 
+    // Graphical elements
     private JPanel buildCenter() {
         JPanel center = new JPanel(new BorderLayout());
         center.setBackground(BLACK);
@@ -115,6 +129,7 @@ public class GUI extends JFrame implements ActionListener {
         return center;
     }
 
+    // Graphical elements
     private JPanel buildSidebar() {
         JPanel sidebar = new JPanel();
         sidebar.setBackground(PANEL_DARK);
@@ -227,20 +242,27 @@ public class GUI extends JFrame implements ActionListener {
         return btn;
     }
 
+    // Establish connection to MySQL database
     private void connectDatabase() {
         try {
+            // Connect to database using JDBC
             conn = DriverManager.getConnection(
                 "jdbc:mysql://localhost:3306/car_rental_agency", "root", "Apr@2024102110");
             textArea.setText("Connected to database");
         } catch (Exception e) {
+            // Show error message if connection fails
             textArea.setText("Database connection failed: " + e.getMessage());
         }
     }
 
+    // Handles button clicks from the sidebar
     @Override
     public void actionPerformed(ActionEvent e) {
+
+        // Identify which button triggered the event
         Object source = e.getSource();
 
+        // Executes method based on event source
         if (source == C) {
             try {
                 String idStr   = styledInput("Create Car", "Enter Car ID:");    if (idStr   == null) return;
@@ -576,39 +598,85 @@ public class GUI extends JFrame implements ActionListener {
                 textArea.setText("Error processing rental: " + ex.getMessage());
             }
 
+        // Payment information is NOT stored directly for security reasons.
+        // The user inputs card details, but the database only stores masked values (**********)
+        // to simulate secure payment processing.
         } else if (source == Payment) {
             try {
+                // Get the customer ID based on the logged in username
                 PreparedStatement idStmt = conn.prepareStatement(
-                    "SELECT c.customer_id FROM Customer c JOIN User u ON c.login_id = u.login_id WHERE u.username=?");
+                    "SELECT c.customer_id FROM Customer c JOIN User u ON c.login_id = u.login_id WHERE u.username=?"
+                );
+        
                 idStmt.setString(1, username);
                 ResultSet idRS = idStmt.executeQuery();
-                if (!idRS.next()) { textArea.setText("Customer account not found."); return; }
+        
+                if (!idRS.next()) {
+                    textArea.setText("Customer account not found.");
+                    return;
+                }
+        
                 String customerId = idRS.getString("customer_id");
-
-                String cardNum  = styledInput("Payment", "Enter Card Number:");  if (cardNum  == null) return;
-                String cardName = styledInput("Payment", "Enter Card Name:");    if (cardName == null) return;
-                String cvv      = styledInput("Payment", "Enter CVV:");          if (cvv      == null) return;
-
+        
+        
+                // Ask user for payment details (for simulation only)
+                String cardNum  = styledInput("Payment", "Enter Card Number:");
+                if (cardNum == null) return;
+        
+                String cardName = styledInput("Payment", "Enter Card Name:");
+                if (cardName == null) return;
+        
+                String cvv      = styledInput("Payment", "Enter CVV:");
+                if (cvv == null) return;
+        
+        
+                // For security purposes, do NOT store real card details
+                // Database will always store masked values
+                String masked = "**********";
+        
+        
+                // Check if payment already exists
                 PreparedStatement checkStmt = conn.prepareStatement(
-                    "SELECT * FROM Payment WHERE customerId=?");
+                    "SELECT * FROM Payment WHERE customerId=?"
+                );
+        
                 checkStmt.setString(1, customerId);
                 ResultSet rs = checkStmt.executeQuery();
-
+        
+        
                 if (rs.next()) {
+        
+                    // Update existing payment method
                     PreparedStatement pst = conn.prepareStatement(
-                        "UPDATE Payment SET cardNum=?, cardName=?, cvv=? WHERE customerId=?");
-                    pst.setString(1, cardNum); pst.setString(2, cardName);
-                    pst.setString(3, cvv);     pst.setString(4, customerId);
+                        "UPDATE Payment SET cardNum=?, cardName=?, cvv=? WHERE customerId=?"
+                    );
+        
+                    pst.setString(1, masked);
+                    pst.setString(2, masked);
+                    pst.setString(3, masked);
+                    pst.setString(4, customerId);
+        
                     pst.executeUpdate();
-                    textArea.setText("Payment information updated.");
+        
+                    textArea.setText("Payment information updated securely.");
+        
                 } else {
+        
+                    // Insert new payment method
                     PreparedStatement pst = conn.prepareStatement(
-                        "INSERT INTO Payment (customerId, cardNum, cardName, cvv) VALUES (?, ?, ?, ?)");
-                    pst.setString(1, customerId); pst.setString(2, cardNum);
-                    pst.setString(3, cardName);   pst.setString(4, cvv);
+                        "INSERT INTO Payment (customerId, cardNum, cardName, cvv) VALUES (?, ?, ?, ?)"
+                    );
+        
+                    pst.setString(1, customerId);
+                    pst.setString(2, masked);
+                    pst.setString(3, masked);
+                    pst.setString(4, masked);
+        
                     pst.executeUpdate();
-                    textArea.setText("Payment method added.");
+        
+                    textArea.setText("Payment method added securely.");
                 }
+
             } catch (Exception ex) {
                 textArea.setText("Error processing payment: " + ex.getMessage());
             }
@@ -903,3 +971,4 @@ public class GUI extends JFrame implements ActionListener {
 
     public static void main(String[] args) {}
 }
+
