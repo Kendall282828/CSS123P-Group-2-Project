@@ -633,7 +633,7 @@ public class GUI extends JFrame implements ActionListener {
                 // For security purposes, do NOT store real card details
                 // Database will always store masked values
                 String masked = "**********";
-        
+                String cvvMasked = "***";
         
                 // Check if payment already exists
                 PreparedStatement checkStmt = conn.prepareStatement(
@@ -653,7 +653,7 @@ public class GUI extends JFrame implements ActionListener {
         
                     pst.setString(1, masked);
                     pst.setString(2, masked);
-                    pst.setString(3, masked);
+                    pst.setString(3, cvvMasked);
                     pst.setString(4, customerId);
         
                     pst.executeUpdate();
@@ -670,7 +670,7 @@ public class GUI extends JFrame implements ActionListener {
                     pst.setString(1, customerId);
                     pst.setString(2, masked);
                     pst.setString(3, masked);
-                    pst.setString(4, masked);
+                    pst.setString(4, cvvMasked);
         
                     pst.executeUpdate();
         
@@ -971,4 +971,5 @@ public class GUI extends JFrame implements ActionListener {
 
     public static void main(String[] args) {}
 }
+
 
